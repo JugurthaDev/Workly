@@ -1,0 +1,156 @@
+﻿@inherits LayoutComponentBase
+@using tp_aspire_samy_jugurtha.WebApp.Components
+
+<PageTitle>Workly - Smart Space Booking</PageTitle>
+
+<ToastNotification @ref="_toastNotification" />
+
+<div class="app-container">
+    <!-- Sidebar moderne -->
+    <aside class="modern-sidebar">
+        <div class="logo-container">
+            <div class="logo-wrapper">
+                <img src="/images/logo_workly.png" alt="Workly Logo" class="workly-logo-img" />
+            </div>
+            <div class="brand-info">
+                <h1 class="brand-name">Workly</h1>
+                <p class="brand-tagline">Smart Space Booking</p>
+            </div>
+        </div>
+
+        <nav class="main-nav">
+            <NavLink href="/dashboard" Match="NavLinkMatch.All" class="nav-link">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                </svg>
+                <span>Dashboard</span>
+            </NavLink>
+
+            <NavLink href="/rooms" class="nav-link">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="9" y1="3" x2="9" y2="21"></line>
+                    <line x1="15" y1="3" x2="15" y2="21"></line>
+                    <line x1="3" y1="9" x2="21" y2="9"></line>
+                    <line x1="3" y1="15" x2="21" y2="15"></line>
+                </svg>
+                <span>Salles</span>
+            </NavLink>
+
+            <NavLink href="/bookings" class="nav-link">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                <span>Réservations</span>
+            </NavLink>
+
+            <AuthorizeView Roles="admin">
+                <Authorized>
+                    <NavLink href="/admin" class="nav-link">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M12 1v6m0 6v6m5.2-13.2l-4.2 4.2m0 6l4.2 4.2M1 12h6m6 0h6m-13.2 5.2l4.2-4.2m0-6l-4.2-4.2"></path>
+                        </svg>
+                        <span>Administration</span>
+                    </NavLink>
+                </Authorized>
+            </AuthorizeView>
+        </nav>
+
+        <div class="sidebar-footer">
+            <AuthorizeView>
+                <Authorized>
+                    <div class="user-info">
+                        <div class="user-avatar">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                        </div>
+                        <div class="user-details">
+                            <p class="user-name">@context.User.Identity?.Name</p>
+                            <AuthorizeView Roles="admin" Context="roleContext">
+                                <Authorized>
+                                    <p class="user-role">Admin</p>
+                                </Authorized>
+                                <NotAuthorized>
+                                    <p class="user-role">Utilisateur</p>
+                                </NotAuthorized>
+                            </AuthorizeView>
+                        </div>
+                    </div>
+                    <button class="logout-btn" @onclick="HandleLogout">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                            <polyline points="16 17 21 12 16 7"></polyline>
+                            <line x1="21" y1="12" x2="9" y2="12"></line>
+                        </svg>
+                        <span>Déconnexion</span>
+                    </button>
+                </Authorized>
+            </AuthorizeView>
+        </div>
+    </aside>
+
+    <!-- Contenu principal -->
+    <main class="main-content">
+        <header class="top-header">
+            <div class="header-search">
+                <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                </svg>
+                <input type="text" placeholder="Rechercher une salle, une réservation..." class="search-input" />
+            </div>
+            <div class="header-actions">
+                <button class="icon-btn notification-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <span class="notification-badge">3</span>
+                </button>
+            </div>
+        </header>
+
+        <div class="content-area">
+            @Body
+        </div>
+    </main>
+</div>
+
+@inject NavigationManager Navigation
+
+@code {
+    private ToastNotification? _toastNotification;
+
+    private void HandleLogout()
+    {
+        // Redirection vers l'endpoint de déconnexion
+        Navigation.NavigateTo("/authentication/logout", forceLoad: true);
+    }
+
+    public void ShowSuccessNotification(string title, string message)
+    {
+        _toastNotification?.ShowSuccess(title, message);
+    }
+
+    public void ShowErrorNotification(string title, string message)
+    {
+        _toastNotification?.ShowError(title, message);
+    }
+
+    public void ShowWarningNotification(string title, string message)
+    {
+        _toastNotification?.ShowWarning(title, message);
+    }
+
+    public void ShowInfoNotification(string title, string message)
+    {
+        _toastNotification?.ShowInfo(title, message);
+    }
+}

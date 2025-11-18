@@ -1,0 +1,42 @@
+﻿@page "/"
+@using Microsoft.AspNetCore.Components.Web
+@namespace tp_aspire_samy_jugurtha.WebApp.Pages
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="~/" />
+    <title>Workly - Smart Space Booking</title>
+    <meta name="description" content="Workly - Réservation intelligente de salles et d'espaces de travail" />
+    <link rel="stylesheet" href="css/bootstrap/bootstrap.min.css" />
+    <link href="css/site.css" rel="stylesheet" />
+    <link href="css/public.css" rel="stylesheet" />
+    <link href="tp_aspire_samy_jugurtha.WebApp.styles.css" rel="stylesheet" />
+    
+    <!-- Favicon SVG optimisé avec cache busting -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2"/>
+    <link rel="alternate icon" type="image/png" href="/images/icone_workly.png?v=2"/>
+    <link rel="apple-touch-icon" sizes="180x180" href="/images/logo_workly.png"/>
+    
+    <component type="typeof(HeadOutlet)" render-mode="ServerPrerendered" />
+</head>
+<body>
+    <component type="typeof(App)" render-mode="ServerPrerendered" />
+
+    <div id="blazor-error-ui">
+        <environment include="Staging,Production">
+            Une erreur s'est produite. L'application peut ne plus répondre jusqu'au rechargement.
+        </environment>
+        <environment include="Development">
+            Une exception non gérée s'est produite. Consultez les outils de développement du navigateur pour plus de détails.
+        </environment>
+        <a href="" class="reload">Recharger</a>
+        <a class="dismiss">🗙</a>
+    </div>
+
+    <script src="_framework/blazor.server.js"></script>
+</body>
+</html>

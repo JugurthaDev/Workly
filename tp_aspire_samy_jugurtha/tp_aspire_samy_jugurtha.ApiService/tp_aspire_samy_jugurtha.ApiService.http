@@ -1,0 +1,6 @@
+@tp_aspire_samy_jugurtha.ApiService_HostAddress = http://localhost:5018
+
+GET {{tp_aspire_samy_jugurtha.ApiService_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

@@ -1,0 +1,15 @@
+# Ignore local files and build outputs
+**/bin/
+**/obj/
+**/node_modules/
+**/.vs/
+**/.vscode/
+**/.idea/
+**/*.user
+**/*.suo
+**/*.swp
+**/*.tmp
+.git
+.gitignore
+.DS_Store
+Thumbs.db

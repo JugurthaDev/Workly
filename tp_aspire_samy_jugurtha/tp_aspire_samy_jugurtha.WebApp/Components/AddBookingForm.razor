@@ -1,0 +1,123 @@
+@using System.ComponentModel.DataAnnotations
+@using tp_aspire_samy_jugurtha.WebApp.Models
+@using tp_aspire_samy_jugurtha.WebApp.Clients
+@inject IWorklyClient Api
+
+<EditForm EditContext="editContext" OnValidSubmit="Submit" FormName="add-booking-form">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <h4>Create a Booking</h4>
+
+    <div class="mb-2">
+        <label class="form-label">User ID</label>
+        <InputNumber @bind-Value="Model.AppUserId" class="form-control" />
+        <ValidationMessage For="() => Model.AppUserId" />
+    </div>
+
+    <div class="mb-2">
+        <label class="form-label">Resource Type</label>
+        <select @bind="Model.ResourceType" class="form-select">
+            <option value="@ResourceType.Room">Room</option>
+            <option value="@ResourceType.Desk">Desk</option>
+        </select>
+        <ValidationMessage For="() => Model.ResourceType" />
+    </div>
+
+    <div class="mb-2">
+        <label class="form-label">Resource ID</label>
+        <InputNumber @bind-Value="Model.ResourceId" class="form-control" />
+        <ValidationMessage For="() => Model.ResourceId" />
+    </div>
+
+    <div class="mb-2">
+        <label class="form-label">Start time (UTC)</label>
+        <InputDate @bind-Value="Model.StartUtc" class="form-control" />
+        <ValidationMessage For="() => Model.StartUtc" />
+    </div>
+
+    <div class="mb-2">
+        <label class="form-label">End time (UTC)</label>
+        <InputDate @bind-Value="Model.EndUtc" class="form-control" />
+        <ValidationMessage For="() => Model.EndUtc" />
+    </div>
+
+    <button type="submit" class="btn btn-primary mt-3">Book</button>
+</EditForm>
+
+@code {
+    public class BookingInput
+    {
+        [Required]
+        public int AppUserId { get; set; }
+
+        [Required]
+        public ResourceType ResourceType { get; set; } = ResourceType.Room;
+
+        [Required]
+        public int ResourceId { get; set; }
+
+        [Required]
+        public DateTime StartUtc { get; set; } = DateTime.UtcNow.AddHours(1);
+
+        [Required]
+        [DateGreaterThan(nameof(StartUtc), ErrorMessage = "End time must be after start time.")]
+        public DateTime EndUtc { get; set; } = DateTime.UtcNow.AddHours(2);
+    }
+
+    // Petite validation custom : EndUtc > StartUtc
+    public class DateGreaterThanAttribute : ValidationAttribute
+    {
+        private readonly string _otherPropertyName;
+        public DateGreaterThanAttribute(string otherPropertyName)
+        {
+            _otherPropertyName = otherPropertyName;
+        }
+
+        protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
+        {
+            var otherProp = validationContext.ObjectType.GetProperty(_otherPropertyName);
+            if (otherProp == null) return ValidationResult.Success;
+
+            var startValue = (DateTime?)otherProp.GetValue(validationContext.ObjectInstance);
+            var endValue = (DateTime?)value;
+
+            if (startValue != null && endValue != null && endValue <= startValue)
+                return new ValidationResult(ErrorMessage ?? "End date must be greater than start date.");
+
+            return ValidationResult.Success;
+        }
+    }
+
+    private BookingInput Model = new();
+    private EditContext? editContext;
+
+    [Parameter] public EventCallback OnBookingAdded { get; set; }
+
+    protected override void OnInitialized()
+    {
+        editContext = new EditContext(Model);
+    }
+
+    private async Task Submit()
+    {
+        var newBooking = new Booking
+        {
+            AppUserId = Model.AppUserId,
+            ResourceType = Model.ResourceType,
+            ResourceId = Model.ResourceId,
+            StartUtc = Model.StartUtc,
+            EndUtc = Model.EndUtc,
+            Status = BookingStatus.Confirmed
+        };
+
+        var created = await Api.CreateBookingAsync(newBooking);
+        if (created is not null)
+        {
+            await OnBookingAdded.InvokeAsync();
+            Model = new BookingInput(); // reset
+            editContext = new EditContext(Model);
+            StateHasChanged();
+        }
+    }
+}

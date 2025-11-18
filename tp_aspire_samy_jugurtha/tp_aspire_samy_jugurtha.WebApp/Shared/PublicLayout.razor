@@ -1,0 +1,70 @@
+@inherits LayoutComponentBase
+
+<PageTitle>Workly - Smart Space Booking</PageTitle>
+
+<div class="public-layout">
+    <header class="public-header">
+        <div class="container-public">
+            <div class="header-content">
+                <div class="logo-section">
+                    <img src="/images/logo_workly.png" alt="Workly Logo" class="header-logo" />
+                    <span class="brand-name-header">Workly</span>
+                </div>
+                
+                <nav class="public-nav">
+                    <a href="/" class="nav-link-public">Accueil</a>
+                    <a href="#features" class="nav-link-public">Fonctionnalités</a>
+                    <a href="#about" class="nav-link-public">À propos</a>
+                </nav>
+
+                <div class="auth-buttons">
+                    <a href="/login" class="btn-login">Connexion</a>
+                    <a href="/register" class="btn-register">Créer un compte</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="public-main">
+        @Body
+    </main>
+
+    <footer class="public-footer">
+        <div class="container-public">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <div class="footer-logo">
+                        <img src="/images/logo_workly.png" alt="Workly Logo" />
+                        <span>Workly</span>
+                    </div>
+                    <p class="footer-tagline">La plateforme intelligente pour gérer vos espaces de travail</p>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Produit</h4>
+                    <a href="#features">Fonctionnalités</a>
+                    <a href="#pricing">Tarifs</a>
+                    <a href="#about">À propos</a>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Support</h4>
+                    <a href="#">Documentation</a>
+                    <a href="#">Contact</a>
+                    <a href="#">FAQ</a>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Légal</h4>
+                    <a href="#">Mentions légales</a>
+                    <a href="#">Confidentialité</a>
+                    <a href="#">CGU</a>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2025 Workly. Tous droits réservés.</p>
+            </div>
+        </div>
+    </footer>
+</div>

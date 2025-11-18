@@ -1,0 +1,141 @@
+services:
+  traefik:
+    image: traefik:v3.1
+    restart: unless-stopped
+    depends_on:
+      - webapp
+      - keycloak
+    command:
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:80
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+      - --entrypoints.websecure.address=:443
+      - --certificatesresolvers.cloudflare.acme.email=${TRAEFIK_ACME_EMAIL}
+      - --certificatesresolvers.cloudflare.acme.storage=/letsencrypt/acme.json
+      - --certificatesresolvers.cloudflare.acme.dnschallenge.provider=cloudflare
+      - --certificatesresolvers.cloudflare.acme.dnschallenge.delaybeforecheck=0
+      - --certificatesresolvers.cloudflare.acme.dnschallenge.resolvers=1.1.1.1:53,1.0.0.1:53
+      - --log.level=INFO
+    environment:
+      CF_DNS_API_TOKEN: ${CF_DNS_API_TOKEN}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/acme.json:/letsencrypt/acme.json
+    networks:
+      - workly
+    labels:
+      - traefik.enable=true
+      - traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https
+      - traefik.http.middlewares.redirect-to-https.redirectscheme.permanent=true
+
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-workly}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-worklypw}
+      POSTGRES_DB: ${POSTGRES_DB:-workly}
+    volumes:
+      - workly_pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - workly
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    depends_on: [postgres]
+    restart: unless-stopped
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_BOOTSTRAP_ADMIN_USERNAME:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_BOOTSTRAP_ADMIN_PASSWORD:-admin}
+      KC_HTTP_ENABLED: "true"
+      KC_HOSTNAME: ${KEYCLOAK_HOSTNAME:-https://auth.worklyapp.fr}
+      KC_HOSTNAME_ADMIN: ${KEYCLOAK_HOSTNAME_ADMIN:-https://auth.worklyapp.fr}
+      KC_HOSTNAME_STRICT: "true"
+      KC_HOSTNAME_STRICT_HTTPS: "true"
+      KC_PROXY: edge
+      PROXY_ADDRESS_FORWARDING: "true"
+    volumes:
+      - ./tp_aspire_samy_jugurtha/tp_aspire_samy_jugurtha.AppHost/infra/keycloak/Workly-realm.json:/opt/keycloak/data/import/Workly-realm.json:ro
+      - ./tp_aspire_samy_jugurtha/tp_aspire_samy_jugurtha.AppHost/infra/keycloak/master-realm.json:/opt/keycloak/data/import/master-realm.json:ro
+    ports:
+      - "8090:8080"
+    command:
+      - start-dev
+      - --import-realm
+      - --hostname=https://auth.worklyapp.fr
+      - --hostname-admin=https://auth.worklyapp.fr
+    networks:
+      - workly
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=workly
+      - traefik.http.services.keycloak.loadbalancer.server.port=8080
+      - traefik.http.routers.keycloak.rule=Host(`auth.worklyapp.fr`)
+      - traefik.http.routers.keycloak.entrypoints=websecure
+      - traefik.http.routers.keycloak.tls.certresolver=cloudflare
+      - traefik.http.routers.keycloak.service=keycloak
+      - traefik.http.routers.keycloak-http.rule=Host(`auth.worklyapp.fr`)
+      - traefik.http.routers.keycloak-http.entrypoints=web
+      - traefik.http.routers.keycloak-http.middlewares=redirect-to-https
+
+  apiservice:
+    image: ${REGISTRY_IMAGE}/apiservice:${TAG}
+    depends_on: [postgres, keycloak]
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+      Authentication__OIDC__Authority: ${OIDC_AUTHORITY:-https://auth.worklyapp.fr/realms/Workly}
+      Authentication__OIDC__Audience: workly-api
+      ConnectionStrings__workly: Host=postgres;Port=5432;Database=${POSTGRES_DB:-workly};Username=${POSTGRES_USER:-workly};Password=${POSTGRES_PASSWORD:-worklypw}
+      ASPNETCORE_ENVIRONMENT: Development
+      APP_VERSION: ${TAG}
+    ports:
+      - "8081:8080"
+    networks:
+      - workly
+      
+  webapp:
+    image: ${REGISTRY_IMAGE}/webapp:${TAG}
+    depends_on: [apiservice, keycloak]
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+      Services__ApiBaseUrl: http://apiservice:8080
+      Authentication__OIDC__Authority: ${OIDC_AUTHORITY:-https://auth.worklyapp.fr/realms/Workly}
+      PublicOrigin__Scheme: ${PUBLIC_SCHEME:-https}
+      PublicOrigin__Host: ${PUBLIC_HOST:-worklyapp.fr}
+      ASPNETCORE_ENVIRONMENT: Development
+      APP_VERSION: ${TAG}
+      DATA_PROTECTION_PATH: /keys
+    volumes:
+      - workly_dpkeys:/keys
+    networks:
+      - workly
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=workly
+      - traefik.http.services.webapp.loadbalancer.server.port=8080
+      - traefik.http.routers.webapp.rule=Host(`worklyapp.fr`)
+      - traefik.http.routers.webapp.entrypoints=websecure
+      - traefik.http.routers.webapp.tls.certresolver=cloudflare
+      - traefik.http.routers.webapp.service=webapp
+      - traefik.http.routers.webapp-http.rule=Host(`worklyapp.fr`)
+      - traefik.http.routers.webapp-http.entrypoints=web
+      - traefik.http.routers.webapp-http.middlewares=redirect-to-https
+
+volumes:
+  workly_pgdata:
+    driver: local
+  workly_dpkeys:
+    driver: local
+
+networks:
+  workly:
+    driver: bridge

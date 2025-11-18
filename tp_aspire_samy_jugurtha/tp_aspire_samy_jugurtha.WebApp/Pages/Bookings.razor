@@ -1,0 +1,244 @@
+@page "/bookings"
+@using tp_aspire_samy_jugurtha.WebApp.Components
+@using tp_aspire_samy_jugurtha.WebApp.Clients
+@using tp_aspire_samy_jugurtha.WebApp.Models
+@using System.Net
+@inject IWorklyClient Api
+@inject NavigationManager Navigation
+@attribute [Authorize]
+
+<PageTitle>Réservations - Workly</PageTitle>
+
+<div class="page-header">
+    <div>
+        <h1>Réservations</h1>
+        <p class="text-secondary">Gérez toutes vos réservations d'espaces de travail</p>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        Créer une nouvelle réservation
+    </div>
+    <div class="card-body">
+        <AddBookingForm OnBookingAdded="HandleBookingAdded" />
+    </div>
+</div>
+
+@if (bookings is null)
+{
+    <div class="loading">
+        <div class="spinner"></div>
+        <p class="mt-2">Chargement des réservations..</p>
+    </div>
+}
+else if (!bookings.Any())
+{
+    <div class="card">
+        <div class="empty-state">
+            <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            <div class="empty-state-title">Aucune réservation</div>
+            <p class="empty-state-description">Créez votre première réservation en utilisant le formulaire ci-dessus.</p>
+        </div>
+    </div>
+}
+else
+{
+    <div class="bookings-timeline">
+        @foreach (var booking in bookings.OrderByDescending(b => b.StartUtc))
+        {
+            var statusClass = GetStatusClass(booking.Status);
+            var statusColor = GetStatusColor(booking.Status);
+            
+            <div class="booking-timeline-item">
+                <div class="booking-timeline-marker" style="background: @statusColor;"></div>
+                <div class="booking-timeline-content">
+                    <div class="booking-card-modern">
+                        <div class="booking-card-header-modern">
+                            <div class="booking-resource">
+                                <div class="booking-resource-icon" style="background: @statusColor;">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                        <line x1="9" y1="9" x2="15" y2="9"></line>
+                                        <line x1="9" y1="15" x2="15" y2="15"></line>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 class="booking-resource-name">@booking.ResourceType</h3>
+                                    <p class="booking-resource-id">ID: #@booking.ResourceId</p>
+                                </div>
+                            </div>
+                            <span class="badge badge-@statusClass">@booking.Status</span>
+                        </div>
+                        
+                        <div class="booking-card-body-modern">
+                            <div class="booking-time-info">
+                                <div class="time-block">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <polyline points="12 6 12 12 16 14"></polyline>
+                                    </svg>
+                                    <div>
+                                        <div class="time-label">Début</div>
+                                        <div class="time-value">@booking.StartUtc.ToString("dd/MM/yyyy HH:mm")</div>
+                                    </div>
+                                </div>
+                                
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="arrow-icon">
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    <polyline points="12 5 19 12 12 19"></polyline>
+                                </svg>
+                                
+                                <div class="time-block">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <polyline points="12 6 12 12 16 14"></polyline>
+                                    </svg>
+                                    <div>
+                                        <div class="time-label">Fin</div>
+                                        <div class="time-value">@booking.EndUtc.ToString("dd/MM/yyyy HH:mm")</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="booking-duration">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                                </svg>
+                                Durée: <strong>@GetDuration(booking.StartUtc, booking.EndUtc)</strong>
+                            </div>
+                        </div>
+                        
+                        <div class="booking-card-actions-modern">
+                            <button class="btn btn-secondary btn-sm" @onclick="() => HandleEditBooking(booking)">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                </svg>
+                                Modifier
+                            </button>
+                            <button class="btn btn-danger btn-sm" @onclick="() => HandleCancelBooking(booking)">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                </svg>
+                                Annuler
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private List<Booking>? bookings;
+
+    [CascadingParameter]
+    public MainLayout? Layout { get; set; }
+
+    protected override async Task OnInitializedAsync()
+        => await LoadBookings();
+
+    private async Task LoadBookings()
+    {
+        try
+        {
+            bookings = await Api.GetBookingsAsync();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            var ret = Uri.EscapeDataString(Navigation.Uri);
+            Navigation.NavigateTo($"/authentication/login?returnUrl={ret}", forceLoad: true);
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.Unauthorized || ex.StatusCode == HttpStatusCode.Forbidden)
+        {
+            var ret = Uri.EscapeDataString(Navigation.Uri);
+            Navigation.NavigateTo($"/authentication/login?returnUrl={ret}", forceLoad: true);
+        }
+    }
+
+    private async Task HandleBookingAdded()
+    {
+        await LoadBookings();
+        Layout?.ShowSuccessNotification(
+            "Réservation créée !",
+            "Votre réservation a été enregistrée avec succès."
+        );
+    }
+
+    private void HandleEditBooking(Booking booking)
+    {
+        Layout?.ShowInfoNotification(
+            "Modification",
+            $"Modification de la réservation {booking.ResourceType} #{booking.ResourceId}"
+        );
+        // Logique de modification à implémenter
+    }
+
+    private void HandleCancelBooking(Booking booking)
+    {
+        Layout?.ShowWarningNotification(
+            "Annulation",
+            $"Êtes-vous sûr de vouloir annuler la réservation {booking.ResourceType} #{booking.ResourceId} ?"
+        );
+        
+        // Simulation d'annulation
+        Task.Delay(2000).ContinueWith(async _ =>
+        {
+            await InvokeAsync(async () =>
+            {
+                Layout?.ShowSuccessNotification(
+                    "Réservation annulée",
+                    "La réservation a été annulée avec succès."
+                );
+                await LoadBookings();
+            });
+        });
+    }
+
+    private string GetStatusClass(BookingStatus status)
+    {
+        return status switch
+        {
+            BookingStatus.Confirmed => "success",
+            BookingStatus.Pending => "warning",
+            BookingStatus.Cancelled => "danger",
+            _ => "info"
+        };
+    }
+
+    private string GetStatusColor(BookingStatus status)
+    {
+        return status switch
+        {
+            BookingStatus.Confirmed => "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+            BookingStatus.Pending => "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
+            BookingStatus.Cancelled => "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
+            _ => "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)"
+        };
+    }
+
+    private string GetDuration(DateTime start, DateTime end)
+    {
+        var duration = end - start;
+        if (duration.TotalDays >= 1)
+            return $"{(int)duration.TotalDays} jour(s)";
+        if (duration.TotalHours >= 1)
+            return $"{(int)duration.TotalHours} heure(s)";
+        return $"{(int)duration.TotalMinutes} minute(s)";
+    }
+}

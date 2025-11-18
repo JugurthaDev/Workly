@@ -1,0 +1,175 @@
+name: CI / Build, Docker & Deploy
+
+on:
+  push:
+    branches: [ "main" ]
+
+env:
+  SDK_IMAGE: mcr.microsoft.com/dotnet/sdk:9.0
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "1"
+  SOLUTION_PATH: tp_aspire_samy_jugurtha/tp_aspire_samy_jugurtha.sln
+  API_DOCKERFILE: tp_aspire_samy_jugurtha/tp_aspire_samy_jugurtha.ApiService/Dockerfile
+  WEB_DOCKERFILE: tp_aspire_samy_jugurtha/tp_aspire_samy_jugurtha.WebApp/Dockerfile
+  VERSION_BASE: "1.0"
+  REGISTRY: ghcr.io
+
+jobs:
+  build:
+    name: Build .NET solution
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ env.SDK_IMAGE }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-
+
+      - name: Restore
+        run: dotnet restore "$SOLUTION_PATH"
+
+      - name: Build
+        run: dotnet build "$SOLUTION_PATH" -c Release --no-restore
+
+  docker:
+    name: Build & push Docker images to GHCR
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      contents: read
+      packages: write 
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set VERSION
+        run: echo "VERSION=${{ env.VERSION_BASE }}.${GITHUB_RUN_NUMBER}" >> $GITHUB_ENV
+
+      - name: Log in to GitHub Container Registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login $REGISTRY -u "${{ github.actor }}" --password-stdin
+
+      - name: Build and push images
+        run: |
+          set -euo pipefail
+
+          REGISTRY_IMAGE="${REGISTRY}/${GITHUB_REPOSITORY,,}"
+
+          echo "Using REGISTRY_IMAGE=$REGISTRY_IMAGE"
+          echo "Building Docker images for version $VERSION"
+
+          # ApiService
+          docker build -f "$API_DOCKERFILE" -t "${REGISTRY_IMAGE}/apiservice:${VERSION}" .
+          docker push "${REGISTRY_IMAGE}/apiservice:${VERSION}"
+
+          docker tag "${REGISTRY_IMAGE}/apiservice:${VERSION}" "${REGISTRY_IMAGE}/apiservice:latest"
+          docker push "${REGISTRY_IMAGE}/apiservice:latest"
+
+          # WebApp
+          docker build -f "$WEB_DOCKERFILE" -t "${REGISTRY_IMAGE}/webapp:${VERSION}" .
+          docker push "${REGISTRY_IMAGE}/webapp:${VERSION}"
+
+          docker tag "${REGISTRY_IMAGE}/webapp:${VERSION}" "${REGISTRY_IMAGE}/webapp:latest"
+          docker push "${REGISTRY_IMAGE}/webapp:latest"
+
+  deploy:
+    name: Deploy to prod server
+    runs-on: ubuntu-latest
+    needs: docker
+    if: github.ref == 'refs/heads/main'
+    env:
+      DEPLOY_PATH: "/root/workly"
+    steps:
+      - name: Set VERSION
+        run: echo "VERSION=${{ env.VERSION_BASE }}.${GITHUB_RUN_NUMBER}" >> $GITHUB_ENV
+
+      - name: Prepare SSH
+        run: |
+          set -euo pipefail
+          eval "$(ssh-agent -s)"
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" | tr -d '\r' | ssh-add - >/dev/null
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+
+          if [ -n "${{ secrets.SSH_KNOWN_HOSTS }}" ]; then
+            echo "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          else
+            ssh-keyscan -p "${{ secrets.DEPLOY_SSH_PORT }}" "${{ secrets.DEPLOY_SSH_HOST }}" >> ~/.ssh/known_hosts
+          fi
+
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: Deploy over SSH
+        run: |
+          set -euo pipefail
+
+          REGISTRY_IMAGE="${REGISTRY}/${GITHUB_REPOSITORY,,}"
+          CR="$REGISTRY"
+          RU="${{ secrets.REGISTRY_USER }}"
+          RP="${{ secrets.REGISTRY_PASSWORD }}"
+          DP="$DEPLOY_PATH"
+          TV="$VERSION"
+
+          echo "Deploying version -> $TV"
+
+          ssh -p "${{ secrets.DEPLOY_SSH_PORT }}" "${{ secrets.DEPLOY_SSH_USER }}@${{ secrets.DEPLOY_SSH_HOST }}" \
+            "REGISTRY_IMAGE='$REGISTRY_IMAGE' CI_REGISTRY='$CR' REGISTRY_USER='$RU' REGISTRY_PASSWORD='$RP' DEPLOY_PATH='$DP' TAG='$TV' bash -s" << 'EOF'
+          set -euo pipefail
+
+          : "${REGISTRY_IMAGE:?missing REGISTRY_IMAGE}"
+          : "${CI_REGISTRY:?missing CI_REGISTRY}"
+          : "${REGISTRY_USER:?missing REGISTRY_USER}"
+          : "${REGISTRY_PASSWORD:?missing REGISTRY_PASSWORD}"
+          : "${DEPLOY_PATH:?missing DEPLOY_PATH}"
+          : "${TAG:?missing TAG}"
+
+          cd "$DEPLOY_PATH"
+
+          echo "$REGISTRY_PASSWORD" | docker login -u "$REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+
+          docker compose pull
+          docker compose up -d --remove-orphans
+
+          docker image prune -f
+          EOF
+
+  tag_version:
+    name: Tag repository with version
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure git
+        run: |
+          git config user.email "ci@github"
+          git config user.name "GitHub Actions"
+
+      - name: Set remote with token
+        run: |
+          git remote set-url origin "https://x-access-token:${{ secrets.REPO_PUSH_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git"
+
+      - name: Set VERSION
+        run: echo "VERSION=${{ env.VERSION_BASE }}.${GITHUB_RUN_NUMBER}" >> $GITHUB_ENV
+
+      - name: Create and push tag
+        run: |
+          git fetch --tags
+          if git tag | grep -qx "$VERSION"; then
+            echo "Tag $VERSION already exists, skipping"
+          else
+            echo "Tagging repository with version $VERSION"
+            git tag "$VERSION"
+            git push origin "$VERSION"
+          fi

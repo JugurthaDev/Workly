@@ -1,0 +1,368 @@
+@page "/dashboard"
+@attribute [Authorize]
+@using tp_aspire_samy_jugurtha.WebApp.Clients
+@using tp_aspire_samy_jugurtha.WebApp.Models
+@using Microsoft.AspNetCore.Authorization
+@inject IWorklyClient Api
+
+<PageTitle>Tableau de bord - Workly</PageTitle>
+
+<div class="dashboard">
+    <div class="page-header">
+        <div>
+            <h1>Tableau de bord</h1>
+            <p class="text-secondary">Bienvenue sur Workly - Gérez vos espaces de travail intelligemment</p>
+        </div>
+        <div class="page-header-actions">
+            <AuthorizeView Roles="admin">
+                <Authorized>
+                    <a href="/admin" class="btn btn-secondary">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M12 1v6m0 6v6m5.2-13.2l-4.2 4.2m0 6l4.2 4.2M1 12h6m6 0h6m-13.2 5.2l4.2-4.2m0-6l-4.2-4.2"></path>
+                        </svg>
+                        Gestion des réservations
+                    </a>
+                </Authorized>
+            </AuthorizeView>
+            <a href="/bookings" class="btn btn-primary">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Nouvelle réservation
+            </a>
+        </div>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="loading">
+            <div class="spinner"></div>
+        </div>
+    }
+    else
+    {
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="9" y1="3" x2="9" y2="21"></line>
+                    </svg>
+                </div>
+                <div class="stat-value">@totalRooms</div>
+                <div class="stat-label">Salles disponibles</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                </div>
+                <div class="stat-value">@totalBookings</div>
+                <div class="stat-label">Réservations actives</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                </div>
+                <div class="stat-value">@occupancyRate%</div>
+                <div class="stat-label">Taux d'occupation</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                    </svg>
+                </div>
+                <div class="stat-value">@availableNow</div>
+                <div class="stat-label">Disponibles maintenant</div>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <span>Réservations récentes</span>
+                <a href="/bookings" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.875rem;">Voir tout</a>
+            </div>
+            <div class="card-body">
+                @if (recentBookings != null && recentBookings.Any())
+                {
+                    <div class="bookings-list">
+                        @foreach (var booking in recentBookings.Take(5))
+                        {
+                            <div class="booking-item">
+                                <div class="booking-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                                    </svg>
+                                </div>
+                                <div class="booking-details">
+                                    <div class="booking-title">@booking.ResourceType #@booking.ResourceId</div>
+                                    <div class="booking-time">@booking.StartUtc.ToString("dd/MM/yyyy HH:mm") - @booking.EndUtc.ToString("HH:mm")</div>
+                                </div>
+                                <span class="badge badge-@GetStatusClass(booking.Status)">@booking.Status</span>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <div class="empty-state-title">Aucune réservation</div>
+                        <p class="empty-state-description">Commencez par créer votre première réservation</p>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <span>Salles populaires</span>
+                <a href="/rooms" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.875rem;">Gérer les salles</a>
+            </div>
+            <div class="card-body">
+                @if (rooms != null && rooms.Any())
+                {
+                    <div class="rooms-grid">
+                        @foreach (var room in rooms.Take(6))
+                        {
+                            <div class="room-card">
+                                <div class="room-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                        <line x1="9" y1="9" x2="15" y2="9"></line>
+                                        <line x1="9" y1="15" x2="15" y2="15"></line>
+                                    </svg>
+                                </div>
+                                <div class="room-name">@room.Name</div>
+                                <div class="room-capacity">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="9" cy="7" r="4"></circle>
+                                    </svg>
+                                    @room.Capacity personnes
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <div class="empty-state-title">Aucune salle</div>
+                        <p class="empty-state-description">Ajoutez votre première salle pour commencer</p>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+
+    .page-header h1 {
+        margin-bottom: 0.25rem;
+    }
+
+    .page-header-actions {
+        display: flex;
+        gap: 1rem;
+    }
+
+    .btn-secondary {
+        background-color: #6c757d;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .btn-secondary:hover {
+        background-color: #5a6268;
+        transform: translateY(-2px);
+    }
+
+    .text-secondary {
+        color: var(--text-secondary);
+    }
+
+    .bookings-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .booking-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        background: var(--bg-secondary);
+        border-radius: 12px;
+        transition: all 0.2s ease;
+    }
+
+    .booking-item:hover {
+        background: #e8ebef;
+    }
+
+    .booking-icon {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .booking-icon svg {
+        width: 20px;
+        height: 20px;
+        stroke: white;
+    }
+
+    .booking-details {
+        flex: 1;
+    }
+
+    .booking-title {
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .booking-time {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+    }
+
+    .rooms-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+
+    .room-card {
+        padding: 1.5rem;
+        background: var(--bg-secondary);
+        border-radius: 12px;
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+
+    .room-card:hover {
+        background: white;
+        box-shadow: var(--shadow);
+        transform: translateY(-4px);
+    }
+
+    .room-icon {
+        width: 48px;
+        height: 48px;
+        margin: 0 auto 1rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .room-icon svg {
+        width: 24px;
+        height: 24px;
+        stroke: white;
+    }
+
+    .room-name {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: var(--text-primary);
+    }
+
+    .room-capacity {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+    }
+</style>
+
+@code {
+    private List<Room>? rooms;
+    private List<Booking>? recentBookings;
+    private bool isLoading = true;
+    private int totalRooms = 0;
+    private int totalBookings = 0;
+    private int occupancyRate = 0;
+    private int availableNow = 0;
+
+    /// <summary>
+    /// Initialisation : charge les données des salles et réservations, calcule les statistiques
+    /// </summary>
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            rooms = await Api.GetRoomsAsync();
+            recentBookings = await Api.GetBookingsAsync();
+            
+            totalRooms = rooms?.Count ?? 0;
+            totalBookings = recentBookings?.Count ?? 0;
+            availableNow = totalRooms - totalBookings;
+            occupancyRate = totalRooms > 0 ? (int)((double)totalBookings / totalRooms * 100) : 0;
+        }
+        catch (Exception)
+        {
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    /// <summary>
+    /// Retourne la classe CSS appropriée selon le statut de la réservation
+    /// </summary>
+    private string GetStatusClass(BookingStatus status)
+    {
+        return status switch
+        {
+            BookingStatus.Confirmed => "success",
+            BookingStatus.Pending => "warning",
+            BookingStatus.Cancelled => "danger",
+            _ => "info"
+        };
+    }
+}

@@ -1,0 +1,72 @@
+@using System.ComponentModel.DataAnnotations
+@using tp_aspire_samy_jugurtha.WebApp.Clients
+@using tp_aspire_samy_jugurtha.WebApp.Models
+@inject IWorklyClient Api
+
+<EditForm EditContext="editContext" OnValidSubmit="Submit" FormName="add-room-form">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <h4>Add a new room</h4>
+
+    <div class="mb-2">
+        <label class="form-label">Workspace Id</label>
+        <InputNumber @bind-Value="Model.WorkspaceId" class="form-control" />
+        <ValidationMessage For="() => Model.WorkspaceId" />
+    </div>
+
+    <div class="mb-2">
+        <label class="form-label">Name</label>
+        <InputText @bind-Value="Model.Name" class="form-control" />
+        <ValidationMessage For="() => Model.Name" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Capacity</label>
+        <InputNumber @bind-Value="Model.Capacity" class="form-control" />
+        <ValidationMessage For="() => Model.Capacity" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Create</button>
+</EditForm>
+
+@code {
+    public class RoomInput
+    {
+        [Required] public int WorkspaceId { get; set; } = 1;
+
+        [Required, MaxLength(150)]
+        public string Name { get; set; } = string.Empty;
+
+        [Range(1, 200)]
+        public int Capacity { get; set; } = 4;
+    }
+
+    private RoomInput Model = new();
+    private EditContext? editContext;
+
+    [Parameter] public EventCallback OnRoomAdded { get; set; } // notifie la page parente
+
+    protected override void OnInitialized()
+    {
+        editContext = new EditContext(Model);
+    }
+
+    private async Task Submit()
+    {
+        var created = await Api.CreateRoomAsync(new Room
+        {
+            WorkspaceId = Model.WorkspaceId,
+            Name = Model.Name,
+            Capacity = Model.Capacity
+        });
+
+        if (created is not null)
+        {
+            await OnRoomAdded.InvokeAsync(); // demande à la page de recharger sa liste
+            Model = new RoomInput();         // reset du formulaire
+            editContext = new EditContext(Model);
+            StateHasChanged();
+        }
+    }
+}
