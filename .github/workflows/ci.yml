@@ -129,12 +129,14 @@ jobs:
           TV="$VERSION"
 
           echo "Deploying version -> $TV"
+          echo "Using REGISTRY_IMAGE=$REGISTRY_IMAGE"
 
           ssh -i ~/.ssh/id_gha -p "${{ secrets.DEPLOY_SSH_PORT }}" "${{ secrets.DEPLOY_SSH_USER }}@${{ secrets.DEPLOY_SSH_HOST }}" \
-            "REGISTRY_IMAGE='$REGISTRY_IMAGE' CI_REGISTRY='$CR' REGISTRY_USER='$RU' REGISTRY_PASSWORD='$RP' DEPLOY_PATH='$DP' TAG='$TV' bash -s" << 'EOF'
+            "REGISTRY_IMAGE='$REGISTRY_IMAGE' CI_REGISTRY_IMAGE='$REGISTRY_IMAGE' CI_REGISTRY='$CR' REGISTRY_USER='$RU' REGISTRY_PASSWORD='$RP' DEPLOY_PATH='$DP' TAG='$TV' bash -s" << 'EOF'
           set -euo pipefail
 
           : "${REGISTRY_IMAGE:?missing REGISTRY_IMAGE}"
+          : "${CI_REGISTRY_IMAGE:?missing CI_REGISTRY_IMAGE}"
           : "${CI_REGISTRY:?missing CI_REGISTRY}"
           : "${REGISTRY_USER:?missing REGISTRY_USER}"
           : "${REGISTRY_PASSWORD:?missing REGISTRY_PASSWORD}"
