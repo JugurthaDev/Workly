@@ -86,7 +86,7 @@ jobs:
     name: Deploy to prod server
     runs-on: ubuntu-latest
     needs: docker
-    if: github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/main'
     env:
       DEPLOY_PATH: "/root/workly"
 
