@@ -57,7 +57,7 @@ jobs:
         run: echo "VERSION=${{ env.VERSION_BASE }}.${GITHUB_RUN_NUMBER}" >> $GITHUB_ENV
 
       - name: Log in to GitHub Container Registry
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login "$REGISTRY" -u "${{ github.actor }}" --password-stdin
+        run: echo "${{ secrets.GHCR_TOKEN }}" | docker login "$REGISTRY" -u "JugurthaDev" --password-stdin
 
       - name: Build and push images
         run: |
