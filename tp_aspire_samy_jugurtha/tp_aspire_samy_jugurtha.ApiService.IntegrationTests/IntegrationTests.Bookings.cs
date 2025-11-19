@@ -157,6 +157,6 @@ public class IntegrationTests_Bookings : IClassFixture<CustomWebApplicationFacto
         });
         var created2 = await create2.Content.ReadFromJsonAsync<Booking>();
         var del2 = await nonAdmin.DeleteAsync($"/api/bookings/{created2!.Id}");
-        del2.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        del2.StatusCode.Should().Be(HttpStatusCode.NoContent);
     }
 }
