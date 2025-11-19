@@ -33,7 +33,8 @@ public partial class Program
 
         builder.Services.AddDataProtection()
             .PersistKeysToFileSystem(new DirectoryInfo(keysPath))
-            .SetApplicationName("workly-web");
+            .SetApplicationName("workly-web")
+            .SetDefaultKeyLifetime(TimeSpan.FromDays(90));
 
         var useTestAuth = IsTruthy(Environment.GetEnvironmentVariable("E2E_TEST_AUTH"));
         if (useTestAuth)
@@ -53,6 +54,8 @@ public partial class Program
         }
         else
         {
+            var isDevelopment = builder.Environment.IsDevelopment();
+            
             builder.Services
                 .AddAuthentication(options =>
                 {
@@ -61,33 +64,37 @@ public partial class Program
                 })
                 .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, cookieOptions =>
                 {
-                    cookieOptions.Cookie.SameSite = SameSiteMode.Lax;
-                    cookieOptions.Cookie.SecurePolicy = CookieSecurePolicy.None;
+                    cookieOptions.Cookie.SameSite = isDevelopment ? SameSiteMode.Lax : SameSiteMode.None;
+                    cookieOptions.Cookie.SecurePolicy = isDevelopment ? CookieSecurePolicy.None : CookieSecurePolicy.Always;
                     cookieOptions.Cookie.HttpOnly = true;
                     cookieOptions.Cookie.Path = "/";
+                    cookieOptions.Cookie.IsEssential = true;
                 })
                 .AddOpenIdConnect("oidc", options =>
                 {
                     options.Authority = builder.Configuration["Authentication:OIDC:Authority"];
                     options.ClientId = builder.Configuration["Authentication:OIDC:ClientId"];
-                    options.RequireHttpsMetadata = false;
+                    options.RequireHttpsMetadata = !isDevelopment;
                     options.ResponseType = "code";
                     options.ResponseMode = "query";
                     options.SaveTokens = true;
                     options.UsePkce = true;
+                    options.GetClaimsFromUserInfoEndpoint = true;
 
                     options.CallbackPath = "/signin-oidc";
                     options.SignedOutCallbackPath = "/signout-callback-oidc";
 
-                    options.CorrelationCookie.SameSite = SameSiteMode.Lax;
-                    options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.None;
+                    options.CorrelationCookie.SameSite = isDevelopment ? SameSiteMode.Lax : SameSiteMode.None;
+                    options.CorrelationCookie.SecurePolicy = isDevelopment ? CookieSecurePolicy.None : CookieSecurePolicy.Always;
                     options.CorrelationCookie.HttpOnly = true;
                     options.CorrelationCookie.IsEssential = true;
+                    options.CorrelationCookie.Path = "/";
 
-                    options.NonceCookie.SameSite = SameSiteMode.Lax;
-                    options.NonceCookie.SecurePolicy = CookieSecurePolicy.None;
+                    options.NonceCookie.SameSite = isDevelopment ? SameSiteMode.Lax : SameSiteMode.None;
+                    options.NonceCookie.SecurePolicy = isDevelopment ? CookieSecurePolicy.None : CookieSecurePolicy.Always;
                     options.NonceCookie.HttpOnly = true;
                     options.NonceCookie.IsEssential = true;
+                    options.NonceCookie.Path = "/";
 
                     options.MapInboundClaims = false;
                     options.TokenValidationParameters = new TokenValidationParameters
@@ -187,10 +194,12 @@ public partial class Program
         app.UseStaticFiles();
         app.UseRouting();
 
+        var isProduction = !app.Environment.IsDevelopment();
         app.UseCookiePolicy(new CookiePolicyOptions
         {
             MinimumSameSitePolicy = SameSiteMode.Unspecified,
-            Secure = CookieSecurePolicy.None
+            Secure = isProduction ? CookieSecurePolicy.Always : CookieSecurePolicy.None,
+            HttpOnly = Microsoft.AspNetCore.CookiePolicy.HttpOnlyPolicy.Always
         });
 
         app.UseAuthentication();
