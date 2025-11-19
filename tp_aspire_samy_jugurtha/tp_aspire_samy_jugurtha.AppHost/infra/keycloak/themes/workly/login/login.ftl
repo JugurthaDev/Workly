@@ -3,7 +3,13 @@
 <head>
     <meta charset="utf-8" />
     <title>Connexion - Workly</title>
-    <link rel="stylesheet" href="css/workly.css" />
+    <link rel="stylesheet" href="css/workly.css?v=1" />
+    <style>
+      /* Fallback inline si la feuille externe ne se charge pas */
+      body {background:#0b1220;}
+      #kc-content.workly-card {border-radius:16px;}
+      button#kc-login {background:#FF6B35;color:#fff;border-radius:10px;padding:.75rem 1.25rem;}
+    </style>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 </head>
 <body>
