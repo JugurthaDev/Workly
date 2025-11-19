@@ -23,7 +23,7 @@
 .logo-container {
     padding: 2.5rem 2rem;
     border-bottom: 1px solid var(--border);
-    background: white;
+    background: white !important;
     text-align: center;
 }
 
@@ -67,7 +67,7 @@
     align-items: center;
     gap: 1.25rem;
     padding: 1.25rem 1.5rem;
-    color: var(--text-secondary);
+    color: var(--text-secondary) !important;
     text-decoration: none;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
@@ -76,6 +76,7 @@
     border-radius: 16px;
     font-size: 1.05rem;
     letter-spacing: -0.2px;
+    background: transparent !important;
 }
 
 .main-nav .nav-link::after {
@@ -93,14 +94,14 @@
 }
 
 .main-nav .nav-link:hover {
-    color: var(--accent);
-    background: linear-gradient(90deg, rgba(255, 107, 53, 0.12) 0%, rgba(255, 107, 53, 0.06) 100%);
+    color: var(--accent) !important;
+    background: linear-gradient(90deg, rgba(255, 107, 53, 0.12) 0%, rgba(255, 107, 53, 0.06) 100%) !important;
     transform: translateX(8px);
     box-shadow: 0 6px 16px rgba(255, 107, 53, 0.2);
 }
 
 .main-nav .nav-link:hover .nav-icon {
-    stroke: var(--accent);
+    stroke: var(--accent) !important;
     transform: scale(1.2) rotate(5deg);
 }
 
@@ -110,15 +111,15 @@
 }
 
 .main-nav .nav-link.active {
-    color: var(--accent);
-    background: linear-gradient(90deg, rgba(255, 107, 53, 0.15) 0%, rgba(255, 107, 53, 0.08) 100%);
+    color: var(--accent) !important;
+    background: linear-gradient(90deg, rgba(255, 107, 53, 0.15) 0%, rgba(255, 107, 53, 0.08) 100%) !important;
     box-shadow: 0 6px 20px rgba(255, 107, 53, 0.25);
     font-weight: 800;
-    border: 2px solid var(--accent);
+    border: 2px solid var(--accent) !important;
 }
 
 .main-nav .nav-link.active .nav-icon {
-    stroke: var(--accent);
+    stroke: var(--accent) !important;
 }
 
 .main-nav .nav-link.active::after {
@@ -140,7 +141,7 @@
 .sidebar-footer {
     padding: 1.5rem;
     border-top: 1px solid var(--border);
-    background: white;
+    background: white !important;
 }
 
 .user-info {

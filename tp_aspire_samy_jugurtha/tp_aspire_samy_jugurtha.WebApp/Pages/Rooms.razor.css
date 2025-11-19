@@ -35,11 +35,12 @@
 
 .room-card-image {
     position: relative;
-    height: 160px;
+    height: 180px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
     background-size: cover;
     background-position: center;
     overflow: hidden;
+    border-radius: 16px 16px 0 0;
 }
 
 .room-card-image::before {
@@ -62,7 +63,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.3) 100%);
+    background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.4) 100%);
 }
 
 @@keyframes float {

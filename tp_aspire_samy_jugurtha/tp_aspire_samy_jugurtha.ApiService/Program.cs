@@ -220,12 +220,23 @@ public class Program
             return Results.Created($"/api/bookings/{booking.Id}", responseBooking);
         });
 
-        app.MapDelete("/api/bookings/{id}", [Authorize(Roles = "admin")] async (WorklyDbContext db, int id) =>
+        app.MapDelete("/api/bookings/{id}", [Authorize] async (WorklyDbContext db, HttpContext ctx, int id) =>
         {
             var booking = await db.Bookings.FindAsync(id);
             if (booking is null)
             {
                 return Results.NotFound();
+            }
+
+            // Vérifier que l'utilisateur est admin OU propriétaire de la réservation
+            var userLabel = ctx.User.FindFirst("email")?.Value 
+                ?? ctx.User.FindFirst("preferred_username")?.Value 
+                ?? ctx.User.Identity?.Name;
+            var isAdmin = ctx.User.IsInRole("admin");
+
+            if (!isAdmin && booking.UserLabel != userLabel)
+            {
+                return Results.Forbid();
             }
 
             db.Bookings.Remove(booking);
