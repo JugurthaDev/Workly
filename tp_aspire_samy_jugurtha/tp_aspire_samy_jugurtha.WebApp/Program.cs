@@ -148,6 +148,13 @@ public partial class Program
                         {
                             context.ProtocolMessage.Parameters.Remove("request");
                         }
+                        
+                        // Si c'est une demande d'inscription, ajoute le paramètre Keycloak
+                        if (context.Properties.Items.TryGetValue("kc_action", out var action) && action == "register")
+                        {
+                            context.ProtocolMessage.SetParameter("kc_action", "register");
+                        }
+                        
                         return Task.CompletedTask;
                     };
                 });
@@ -214,18 +221,18 @@ public partial class Program
                 await ctx.ChallengeAsync("oidc", new AuthenticationProperties { RedirectUri = returnUrl });
             }).AllowAnonymous();
 
-            // Inscription via Keycloak
-            app.MapGet("/authentication/register", ctx =>
+            // Inscription via Keycloak (passe par le middleware OIDC avec paramètre kc_action)
+            app.MapGet("/authentication/register", async ctx =>
             {
-                var configuration = ctx.RequestServices.GetRequiredService<IConfiguration>();
-                var authority = configuration["Authentication:OIDC:Authority"];
-                var clientId = configuration["Authentication:OIDC:ClientId"];
-                var redirectUri = $"{ctx.Request.Scheme}://{ctx.Request.Host}/signin-oidc";
-                var encodedRedirectUri = Uri.EscapeDataString(redirectUri);
-                var registerUrl = $"{authority}/protocol/openid-connect/registrations?client_id={clientId}&response_type=code&scope=openid&redirect_uri={encodedRedirectUri}";
-
-                ctx.Response.Redirect(registerUrl);
-                return Task.CompletedTask;
+                var returnUrl = ctx.Request.Query["returnUrl"].FirstOrDefault() ?? "/";
+                var properties = new AuthenticationProperties 
+                { 
+                    RedirectUri = returnUrl
+                };
+                // Ajoute le paramètre Keycloak pour afficher la page d'inscription
+                properties.Items["kc_action"] = "register";
+                
+                await ctx.ChallengeAsync("oidc", properties);
             }).AllowAnonymous();
 
             // Déconnexion complète (cookie + Keycloak SSO)
