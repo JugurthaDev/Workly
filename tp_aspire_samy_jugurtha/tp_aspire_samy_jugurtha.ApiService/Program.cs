@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using System.Security.Claims;
 using tp_aspire_samy_jugurtha.ApiService.Data;
 using tp_aspire_samy_jugurtha.ApiService.Data.Entities;
 
@@ -129,7 +130,7 @@ public class Program
         app.MapGet("/api/bookings/all", [Authorize(Roles = "admin")] async (WorklyDbContext db) =>
             await db.Bookings.AsNoTracking().ToListAsync());
 
-        app.MapPost("/api/bookings", [Authorize] async (WorklyDbContext db, Booking booking) =>
+        app.MapPost("/api/bookings", [Authorize] async (ClaimsPrincipal principal, WorklyDbContext db, Booking booking) =>
         {
             var overlap = await db.Bookings.AnyAsync(existing =>
                 existing.ResourceType == booking.ResourceType &&
@@ -140,6 +141,20 @@ public class Program
             if (overlap)
             {
                 return Results.Conflict("Créneau déjà pris.");
+            }
+
+            var resolvedUser = await ResolveAppUserAsync(principal, db);
+            if (resolvedUser is null)
+            {
+                return Results.BadRequest(new { Message = "Impossible de déterminer l'utilisateur courant." });
+            }
+
+            booking.Id = 0;
+            booking.AppUserId = resolvedUser.Id;
+            booking.AppUser = resolvedUser;
+            if (booking.Status == default)
+            {
+                booking.Status = BookingStatus.Confirmed;
             }
 
             db.Bookings.Add(booking);
@@ -195,5 +210,41 @@ public class Program
             db.Rooms.Add(new Room { WorkspaceId = 1, Name = "Salle Volt", Capacity = 6 });
             await db.SaveChangesAsync();
         }
+    }
+
+    private static async Task<AppUser?> ResolveAppUserAsync(ClaimsPrincipal principal, WorklyDbContext db)
+    {
+        var identifier = principal.FindFirstValue(ClaimTypes.Email)
+                         ?? principal.FindFirst("preferred_username")?.Value
+                         ?? principal.FindFirstValue(ClaimTypes.Name)
+                         ?? principal.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrWhiteSpace(identifier))
+        {
+            return null;
+        }
+
+        var email = identifier.Contains('@', StringComparison.Ordinal)
+            ? identifier
+            : $"{identifier}@workly.local";
+
+        var displayName = principal.FindFirstValue("name")
+                           ?? principal.Identity?.Name
+                           ?? identifier;
+
+        var existing = await db.AppUsers.FirstOrDefaultAsync(u => u.Email == email);
+        if (existing != null)
+        {
+            return existing;
+        }
+
+        var created = new AppUser
+        {
+            Email = email,
+            DisplayName = string.IsNullOrWhiteSpace(displayName) ? email : displayName
+        };
+
+        db.AppUsers.Add(created);
+        return created;
     }
 }
