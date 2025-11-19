@@ -51,7 +51,7 @@ jobs:
         run: dotnet build "$SOLUTION_PATH" -c Release --no-restore
 
   test:
-    name: Tests (unitaires, intégration, E2E)
+    name: Tests (unitaires, integration, E2E)
     runs-on: ubuntu-latest
     needs: build
 
