@@ -54,8 +54,22 @@ public class WorklyClient(HttpClient http) : IWorklyClient
     public async Task<Booking?> CreateBookingAsync(Booking booking, CancellationToken ct = default)
     {
         var resp = await http.PostAsJsonAsync("/api/bookings", booking, JsonOpts, ct);
+        if (resp.IsSuccessStatusCode)
+        {
+            return await resp.Content.ReadFromJsonAsync<Booking>(JsonOpts, ct);
+        }
+
+        if (resp.StatusCode == HttpStatusCode.Conflict)
+        {
+            var conflict = await resp.Content.ReadFromJsonAsync<BookingConflictResponse>(JsonOpts, ct);
+            throw new BookingConflictException(
+                conflict?.Message ?? "Ce créneau est déjà réservé.",
+                conflict?.ExistingStartUtc,
+                conflict?.ExistingEndUtc);
+        }
+
         resp.EnsureSuccessStatusCode();
-        return await resp.Content.ReadFromJsonAsync<Booking>(JsonOpts, ct);
+        return null;
     }
 
     public async Task DeleteBookingAsync(int bookingId, CancellationToken ct = default)
@@ -63,4 +77,6 @@ public class WorklyClient(HttpClient http) : IWorklyClient
         var resp = await http.DeleteAsync($"/api/bookings/{bookingId}", ct);
         resp.EnsureSuccessStatusCode();
     }
+
+    private sealed record BookingConflictResponse(string? Message, DateTime? ExistingStartUtc, DateTime? ExistingEndUtc);
 }

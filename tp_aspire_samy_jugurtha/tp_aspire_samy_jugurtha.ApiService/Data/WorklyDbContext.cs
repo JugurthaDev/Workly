@@ -39,6 +39,7 @@ public class WorklyDbContext : DbContext
             e.ToTable("T_Rooms");
             e.HasKey(x => x.Id);
             e.Property(x => x.Name).IsRequired().HasMaxLength(150);
+            e.Property(x => x.Location).IsRequired().HasMaxLength(200);
             e.Property(x => x.Capacity).IsRequired();
 
             e.HasOne(x => x.Workspace)
@@ -65,7 +66,10 @@ public class WorklyDbContext : DbContext
 
         b.Entity<Booking>(e =>
         {
-            e.ToTable("T_Bookings");
+            e.ToTable("T_Bookings", t =>
+            {
+                t.HasCheckConstraint("CK_Bookings_StartBeforeEnd", "\"StartUtc\" < \"EndUtc\"");
+            });
             e.HasKey(x => x.Id);
             e.Property(x => x.ResourceType).IsRequired();
             e.Property(x => x.StartUtc).IsRequired();
@@ -77,7 +81,6 @@ public class WorklyDbContext : DbContext
              .OnDelete(DeleteBehavior.Restrict);
 
             e.HasIndex(x => new { x.ResourceType, x.ResourceId, x.StartUtc, x.EndUtc }).IsUnique();
-            e.HasCheckConstraint("CK_Bookings_StartBeforeEnd", "\"StartUtc\" < \"EndUtc\"");
         });
 
         base.OnModelCreating(b);

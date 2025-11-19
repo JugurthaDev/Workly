@@ -83,40 +83,23 @@
             Type = type,
             Title = title,
             Message = message,
-            IsVisible = false
+            IsVisible = true
         };
 
         _notifications.Add(notification);
-        StateHasChanged();
-
-        // Animation d'apparition
-        Task.Delay(100).ContinueWith(_ =>
-        {
-            notification.IsVisible = true;
-            InvokeAsync(StateHasChanged);
-        });
-
-        // Auto-suppression après 5 secondes
-        Task.Delay(5000).ContinueWith(_ =>
-        {
-            RemoveNotification(notification.Id);
-        });
+        InvokeAsync(StateHasChanged);
     }
 
     private void RemoveNotification(Guid id)
     {
         var notification = _notifications.FirstOrDefault(n => n.Id == id);
-        if (notification != null)
+        if (notification is null)
         {
-            notification.IsVisible = false;
-            StateHasChanged();
-
-            Task.Delay(300).ContinueWith(_ =>
-            {
-                _notifications.Remove(notification);
-                InvokeAsync(StateHasChanged);
-            });
+            return;
         }
+
+        _notifications.Remove(notification);
+        InvokeAsync(StateHasChanged);
     }
 
     public enum NotificationType

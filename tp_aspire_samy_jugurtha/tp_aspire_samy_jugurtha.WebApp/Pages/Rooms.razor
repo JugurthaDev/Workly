@@ -12,6 +12,11 @@
 <PageTitle>Salles - Workly</PageTitle>
 
 <RoomDetailsModal IsVisible="_showModal" Room="_selectedRoom" OnClose="CloseModal" OnBook="HandleBookRoom" />
+<RoomBookingModal IsVisible="_showBookingModal"
+                  Room="_roomToBook"
+                  CurrentUserLabel="@_currentUserLabel"
+                  OnClose="CloseBookingModal"
+                  OnBooked="OnBookingCompleted" />
 
 <div class="page-header">
     <div>
@@ -93,7 +98,7 @@ else
                             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
                             <circle cx="12" cy="10" r="3"></circle>
                         </svg>
-                        <span>Workspace: <strong>#@room.WorkspaceId</strong></span>
+                        <span>Lieu: <strong>@room.Location</strong></span>
                     </div>
                 </div>
                 
@@ -124,13 +129,25 @@ else
 @code {
     private List<Room>? rooms;
     private bool _showModal = false;
+    private bool _showBookingModal = false;
     private Room? _selectedRoom;
+    private Room? _roomToBook;
+    private string _currentUserLabel = string.Empty;
 
     [CascadingParameter]
     public MainLayout? Layout { get; set; }
 
     protected override async Task OnInitializedAsync()
-        => await LoadRooms();
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        _currentUserLabel = user?.FindFirst("email")?.Value
+            ?? user?.FindFirst("preferred_username")?.Value
+            ?? user?.Identity?.Name
+            ?? "Utilisateur Workly";
+
+        await LoadRooms();
+    }
 
     private async Task LoadRooms()
     {
@@ -170,28 +187,36 @@ else
     }
 
     private void QuickBookRoom(Room room)
-    {
-        Layout?.ShowSuccessNotification(
-            "Réservation rapide",
-            $"Redirection vers la réservation de {room.Name}..."
-        );
-        
-        Task.Delay(1000).ContinueWith(_ =>
-        {
-            Navigation.NavigateTo("/bookings");
-        });
-    }
+        => OpenBookingModal(room);
 
     private void HandleBookRoom(Room room)
     {
+        CloseModal();
+        OpenBookingModal(room);
+    }
+
+    private void OpenBookingModal(Room room)
+    {
+        _roomToBook = room;
+        _showBookingModal = true;
+        StateHasChanged();
+    }
+
+    private Task CloseBookingModal()
+    {
+        _showBookingModal = false;
+        _roomToBook = null;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private async Task OnBookingCompleted(Room room)
+    {
         Layout?.ShowSuccessNotification(
-            "Réservation initiée",
-            $"Préparation de la réservation pour {room.Name}"
+            "Réservation confirmée",
+            $"{room.Name} a été réservée."
         );
-        
-        Task.Delay(1000).ContinueWith(_ =>
-        {
-            Navigation.NavigateTo("/bookings");
-        });
+
+        await LoadRooms();
     }
 }

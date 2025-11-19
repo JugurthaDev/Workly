@@ -93,6 +93,7 @@ namespace tp_aspire_samy_jugurtha.ApiService.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     WorkspaceId = table.Column<int>(type: "integer", nullable: false),
                     Name = table.Column<string>(type: "character varying(150)", maxLength: 150, nullable: false),
+                    Location = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false, defaultValue: ""),
                     Capacity = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
