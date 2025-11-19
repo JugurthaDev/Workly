@@ -142,18 +142,34 @@ public class Program
             return Results.Created($"/api/rooms/{room.Id}", room);
         });
 
-        app.MapGet("/api/bookings", [Authorize] async (WorklyDbContext db) =>
-            await db.Bookings.AsNoTracking().Select(b => new Booking
+        app.MapGet("/api/bookings", [Authorize] async (ClaimsPrincipal principal, WorklyDbContext db) =>
+        {
+            // On récupère l'utilisateur applicatif correspondant à l'utilisateur connecté
+            var resolvedUser = await ResolveAppUserAsync(principal, db);
+            if (resolvedUser is null)
             {
-                Id = b.Id,
-                AppUserId = b.AppUserId,
-                ResourceType = b.ResourceType,
-                ResourceId = b.ResourceId,
-                StartUtc = b.StartUtc,
-                EndUtc = b.EndUtc,
-                Status = b.Status,
-                AppUser = null
-            }).ToListAsync());
+                return Results.BadRequest(new { Message = "Impossible de déterminer l'utilisateur courant." });
+            }
+
+            var userBookings = await db.Bookings
+                .AsNoTracking()
+                .Where(b => b.AppUserId == resolvedUser.Id)
+                .OrderByDescending(b => b.StartUtc)
+                .Select(b => new Booking
+                {
+                    Id = b.Id,
+                    AppUserId = b.AppUserId,
+                    ResourceType = b.ResourceType,
+                    ResourceId = b.ResourceId,
+                    StartUtc = b.StartUtc,
+                    EndUtc = b.EndUtc,
+                    Status = b.Status,
+                    AppUser = null
+                })
+                .ToListAsync();
+
+            return Results.Ok(userBookings);
+        });
 
         app.MapGet("/api/bookings/all", [Authorize(Roles = "admin")] async (WorklyDbContext db) =>
             await db.Bookings.AsNoTracking().Select(b => new Booking
