@@ -142,10 +142,31 @@ public class Program
             return Results.Created($"/api/rooms/{room.Id}", room);
         });
 
-        app.MapGet("/api/bookings", [Authorize] async (WorklyDbContext db) => await db.Bookings.AsNoTracking().ToListAsync());
+        app.MapGet("/api/bookings", [Authorize] async (WorklyDbContext db) =>
+            await db.Bookings.AsNoTracking().Select(b => new Booking
+            {
+                Id = b.Id,
+                AppUserId = b.AppUserId,
+                ResourceType = b.ResourceType,
+                ResourceId = b.ResourceId,
+                StartUtc = b.StartUtc,
+                EndUtc = b.EndUtc,
+                Status = b.Status,
+                AppUser = null
+            }).ToListAsync());
 
         app.MapGet("/api/bookings/all", [Authorize(Roles = "admin")] async (WorklyDbContext db) =>
-            await db.Bookings.AsNoTracking().ToListAsync());
+            await db.Bookings.AsNoTracking().Select(b => new Booking
+            {
+                Id = b.Id,
+                AppUserId = b.AppUserId,
+                ResourceType = b.ResourceType,
+                ResourceId = b.ResourceId,
+                StartUtc = b.StartUtc,
+                EndUtc = b.EndUtc,
+                Status = b.Status,
+                AppUser = null
+            }).ToListAsync());
 
         app.MapPost("/api/bookings", [Authorize] async (ClaimsPrincipal principal, WorklyDbContext db, Booking booking) =>
         {
@@ -175,7 +196,7 @@ public class Program
 
             booking.Id = 0;
             booking.AppUserId = resolvedUser.Id;
-            booking.AppUser = null; // éviter les cycles de sérialisation
+            booking.AppUser = null;
             if (booking.Status == default)
             {
                 booking.Status = BookingStatus.Confirmed;
@@ -184,18 +205,7 @@ public class Program
             db.Bookings.Add(booking);
             await db.SaveChangesAsync();
 
-            var dto = new
-            {
-                booking.Id,
-                booking.AppUserId,
-                booking.ResourceType,
-                booking.ResourceId,
-                booking.StartUtc,
-                booking.EndUtc,
-                booking.Status
-            };
-
-            return Results.Created($"/api/bookings/{booking.Id}", dto);
+            return Results.Created($"/api/bookings/{booking.Id}", booking);
         });
 
         app.MapDelete("/api/bookings/{id}", [Authorize(Roles = "admin")] async (WorklyDbContext db, int id) =>
