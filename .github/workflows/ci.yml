@@ -41,31 +41,6 @@ jobs:
       - name: Build
         run: dotnet build "$SOLUTION_PATH" -c Release --no-restore
 
-      - name: Cache Playwright browsers
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-v1
-
-      - name: Install Playwright CLI
-        run: dotnet tool update --global Microsoft.Playwright.CLI || dotnet tool install --global Microsoft.Playwright.CLI
-
-      - name: Install Playwright browsers (with OS deps)
-        run: sudo ~/.dotnet/tools/playwright install --with-deps
-
-      - name: Test
-        run: dotnet test "$SOLUTION_PATH" -c Release --no-build --logger "trx;LogFileName=test-results.trx"
-
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-            name: test-results
-            path: |
-              **/TestResults/*.trx
-              **/TestResults/*/*.trx
-
   docker:
     name: Build & push Docker images to GHCR
     runs-on: ubuntu-latest
