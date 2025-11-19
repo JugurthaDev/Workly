@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <title>Connexion - Workly</title>
-    <link rel="stylesheet" href="css/workly.css?v=1" />
+  <link rel="stylesheet" href="${url.resourcesPath}/css/workly.css?v=1" />
     <style>
       /* Fallback inline si la feuille externe ne se charge pas */
       body {background:#0b1220;}

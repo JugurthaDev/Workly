@@ -129,6 +129,20 @@ public partial class Program
                         }
                         return Task.CompletedTask;
                     };
+
+                    // Désactive l'usage de request_uri / PAR côté client si injecté par défaut
+                    options.Events.OnRedirectToIdentityProvider = context =>
+                    {
+                        if (context.ProtocolMessage.Parameters.ContainsKey("request_uri"))
+                        {
+                            context.ProtocolMessage.Parameters.Remove("request_uri");
+                        }
+                        if (context.ProtocolMessage.Parameters.ContainsKey("request"))
+                        {
+                            context.ProtocolMessage.Parameters.Remove("request");
+                        }
+                        return Task.CompletedTask;
+                    };
                 });
 
             builder.Services.AddAuthorization(options =>

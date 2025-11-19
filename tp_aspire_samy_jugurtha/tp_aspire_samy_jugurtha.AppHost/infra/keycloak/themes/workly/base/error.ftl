@@ -13,12 +13,12 @@
   </header>
   <main id="kc-content" class="workly-card">
     <h1>Une erreur est survenue</h1>
-    <p>Impossible de poursuivre l'authentification.</p>
+    <p>Requête invalide.</p>
     <#if message??>
       <div class="alert error">${message.summary?no_esc}</div>
     </#if>
     <div class="actions">
-      <a class="btn" href="${url.loginUrl}">Retour à la connexion</a>
+      <a class="btn" href="/">Retour</a>
     </div>
   </main>
   <footer class="workly-footer">
