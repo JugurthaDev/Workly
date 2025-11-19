@@ -248,24 +248,110 @@ public class Program
         await SeedAsync(db);
     }
 
-    // ---- seed simple pour la démo ----
+    // ---- seed enrichi pour la démo ----
     private static async Task SeedAsync(WorklyDbContext db)
     {
+        // Utilisateurs de test correspondant aux comptes Keycloak
+        // admin / admin123 (rôle: admin)
+        // user / user123 (rôle: user)
         if (!await db.AppUsers.AnyAsync())
         {
-            db.AppUsers.Add(new AppUser { DisplayName = "demo", Email = "demo@workly.test" });
+            var users = new[]
+            {
+                new AppUser { DisplayName = "Admin User", Email = "admin@workly.test" },
+                new AppUser { DisplayName = "Regular User", Email = "user@workly.test" }
+            };
+            db.AppUsers.AddRange(users);
             await db.SaveChangesAsync();
         }
 
+        // Un seul workspace
         if (!await db.Workspaces.AnyAsync())
         {
-            db.Workspaces.Add(new Workspace { Name = "HQ Paris" });
+            db.Workspaces.Add(new Workspace { Name = "HQ Paris", City = "Paris" });
             await db.SaveChangesAsync();
         }
 
+        // Salles avec noms de grandes villes mondiales
         if (!await db.Rooms.AnyAsync())
         {
-            db.Rooms.Add(new Room { WorkspaceId = 1, Name = "Salle Volt", Capacity = 6 });
+            var rooms = new[]
+            {
+                new Room { WorkspaceId = 1, Name = "Paris", Location = "Étage 2, Aile Est", Capacity = 8 },
+                new Room { WorkspaceId = 1, Name = "New York", Location = "Étage 2, Aile Ouest", Capacity = 10 },
+                new Room { WorkspaceId = 1, Name = "Tokyo", Location = "Étage 3, Centre", Capacity = 12 },
+                new Room { WorkspaceId = 1, Name = "Londres", Location = "Étage 3, Aile Est", Capacity = 6 },
+                new Room { WorkspaceId = 1, Name = "Berlin", Location = "Étage 3, Aile Ouest", Capacity = 8 },
+                new Room { WorkspaceId = 1, Name = "Sydney", Location = "Étage 4, Centre", Capacity = 10 },
+                new Room { WorkspaceId = 1, Name = "Dubai", Location = "Étage 4, Aile Est", Capacity = 6 },
+                new Room { WorkspaceId = 1, Name = "Singapour", Location = "Étage 4, Aile Ouest", Capacity = 8 },
+                new Room { WorkspaceId = 1, Name = "Shanghai", Location = "Étage 5, Centre", Capacity = 12 },
+                new Room { WorkspaceId = 1, Name = "Los Angeles", Location = "Étage 5, Aile Est", Capacity = 10 }
+            };
+            db.Rooms.AddRange(rooms);
+            await db.SaveChangesAsync();
+        }
+
+        // Réservations de démo (toutes confirmées automatiquement)
+        if (!await db.Bookings.AnyAsync())
+        {
+            var now = DateTime.UtcNow;
+            var today = now.Date;
+            
+            var bookings = new[]
+            {
+                // Réservations d'aujourd'hui
+                new Booking 
+                { 
+                    AppUserId = 1, 
+                    ResourceType = ResourceType.Room, 
+                    ResourceId = 1, 
+                    StartUtc = today.AddHours(9), 
+                    EndUtc = today.AddHours(11),
+                    Status = BookingStatus.Confirmed 
+                },
+                new Booking 
+                { 
+                    AppUserId = 1, 
+                    ResourceType = ResourceType.Room, 
+                    ResourceId = 3, 
+                    StartUtc = today.AddHours(14), 
+                    EndUtc = today.AddHours(16),
+                    Status = BookingStatus.Confirmed 
+                },
+                
+                // Réservations de demain
+                new Booking 
+                { 
+                    AppUserId = 1, 
+                    ResourceType = ResourceType.Room, 
+                    ResourceId = 2, 
+                    StartUtc = today.AddDays(1).AddHours(10), 
+                    EndUtc = today.AddDays(1).AddHours(12),
+                    Status = BookingStatus.Confirmed 
+                },
+                new Booking 
+                { 
+                    AppUserId = 1, 
+                    ResourceType = ResourceType.Room, 
+                    ResourceId = 5, 
+                    StartUtc = today.AddDays(1).AddHours(15), 
+                    EndUtc = today.AddDays(1).AddHours(17),
+                    Status = BookingStatus.Confirmed 
+                },
+                
+                // Réservations après-demain
+                new Booking 
+                { 
+                    AppUserId = 1, 
+                    ResourceType = ResourceType.Room, 
+                    ResourceId = 6, 
+                    StartUtc = today.AddDays(2).AddHours(9), 
+                    EndUtc = today.AddDays(2).AddHours(11),
+                    Status = BookingStatus.Confirmed 
+                }
+            };
+            db.Bookings.AddRange(bookings);
             await db.SaveChangesAsync();
         }
     }
