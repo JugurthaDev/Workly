@@ -3,46 +3,187 @@
 @using tp_aspire_samy_jugurtha.WebApp.Clients
 @inject IWorklyClient Api
 
-<EditForm EditContext="editContext" OnValidSubmit="Submit" FormName="add-booking-form">
+<EditForm EditContext="editContext" OnValidSubmit="Submit" FormName="add-booking-form" class="modern-form">
     <DataAnnotationsValidator />
-    <ValidationSummary />
-
-    <h4>Create a Booking</h4>
 
     @if (!string.IsNullOrEmpty(_errorMessage))
     {
-        <div class="alert alert-danger">@_errorMessage</div>
+        <div class="form-modern-alert">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            @_errorMessage
+        </div>
+    }
+    
+    <div class="form-modern-grid">
+        <div class="form-modern-group">
+            <label class="form-modern-label">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="9" y1="3" x2="9" y2="21"></line>
+                </svg>
+                Type de ressource
+            </label>
+            <select @bind="Model.ResourceType" class="form-modern-control">
+                <option value="@ResourceType.Room">Salle</option>
+                <option value="@ResourceType.Desk">Bureau</option>
+            </select>
+            <ValidationMessage For="() => Model.ResourceType" class="form-modern-error" />
+        </div>
+
+        <div class="form-modern-group">
+            <label class="form-modern-label">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                </svg>
+                ID de la ressource
+            </label>
+            <InputNumber @bind-Value="Model.ResourceId" class="form-modern-control" />
+            <ValidationMessage For="() => Model.ResourceId" class="form-modern-error" />
+        </div>
+
+        <div class="form-modern-group">
+            <label class="form-modern-label">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                Date et heure de début
+            </label>
+            <InputDate @bind-Value="Model.StartUtc" class="form-modern-control" />
+            <ValidationMessage For="() => Model.StartUtc" class="form-modern-error" />
+        </div>
+
+        <div class="form-modern-group">
+            <label class="form-modern-label">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                Date et heure de fin
+            </label>
+            <InputDate @bind-Value="Model.EndUtc" class="form-modern-control" />
+            <ValidationMessage For="() => Model.EndUtc" class="form-modern-error" />
+        </div>
+    </div>
+
+    <button type="submit" class="btn-modern-submit">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+        </svg>
+        Réserver maintenant
+    </button>
+</EditForm>
+
+<style>
+    .modern-form {
+        animation: fadeInUp 0.5s ease;
     }
 
-    <div class="mb-2">
-        <label class="form-label">Resource Type</label>
-        <select @bind="Model.ResourceType" class="form-select">
-            <option value="@ResourceType.Room">Room</option>
-            <option value="@ResourceType.Desk">Desk</option>
-        </select>
-        <ValidationMessage For="() => Model.ResourceType" />
-    </div>
+    .form-modern-alert {
+        padding: 1rem 1.25rem;
+        background: rgba(239, 68, 68, 0.1);
+        border: 2px solid var(--danger);
+        border-radius: 12px;
+        color: var(--danger);
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
 
-    <div class="mb-2">
-        <label class="form-label">Resource ID</label>
-        <InputNumber @bind-Value="Model.ResourceId" class="form-control" />
-        <ValidationMessage For="() => Model.ResourceId" />
-    </div>
+    .form-modern-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
 
-    <div class="mb-2">
-        <label class="form-label">Start time (UTC)</label>
-        <InputDate @bind-Value="Model.StartUtc" class="form-control" />
-        <ValidationMessage For="() => Model.StartUtc" />
-    </div>
+    .form-modern-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
 
-    <div class="mb-2">
-        <label class="form-label">End time (UTC)</label>
-        <InputDate @bind-Value="Model.EndUtc" class="form-control" />
-        <ValidationMessage For="() => Model.EndUtc" />
-    </div>
+    .form-modern-label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 600;
+        color: var(--primary);
+        font-size: 0.9rem;
+    }
 
-    <button type="submit" class="btn btn-primary mt-3">Book</button>
-</EditForm>
+    .form-modern-label svg {
+        stroke: var(--accent);
+    }
+
+    .form-modern-control {
+        width: 100%;
+        padding: 0.875rem 1rem;
+        border: 2px solid var(--border);
+        border-radius: 12px;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+        background: white;
+        font-family: inherit;
+        color: var(--text-primary);
+    }
+
+    .form-modern-control:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.1);
+        transform: translateY(-2px);
+    }
+
+    .form-modern-control:hover {
+        border-color: var(--accent);
+    }
+
+    .form-modern-error {
+        color: var(--danger);
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+
+    .btn-modern-submit {
+        width: 100%;
+        padding: 1rem 2rem;
+        background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-size: 1rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        box-shadow: 0 6px 20px rgba(255, 107, 53, 0.3);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .btn-modern-submit:hover {
+        box-shadow: 0 8px 24px rgba(255, 107, 53, 0.4);
+        transform: translateY(-3px);
+    }
+
+    .btn-modern-submit:active {
+        transform: translateY(-1px);
+    }
+</style>
 
 @code {
     public class BookingInput

@@ -18,12 +18,13 @@
                   OnClose="CloseBookingModal"
                   OnBooked="OnBookingCompleted" />
 
-<div class="page-header">
-    <div>
-        <h1>Salles disponibles</h1>
-        <p class="text-secondary">Consultez les espaces de travail disponibles</p>
+<div class="rooms-page-modern">
+    <div class="dashboard-hero">
+        <div class="hero-text">
+            <h1 class="dashboard-title">Salles disponibles</h1>
+            <p class="dashboard-subtitle">Consultez et réservez les espaces de travail disponibles</p>
+        </div>
     </div>
-</div>
 
 <AuthorizeView Roles="admin">
     <Authorized>
@@ -125,6 +126,65 @@ else
         }
     </div>
 }
+</div>
+
+<style>
+    .rooms-page-modern {
+        animation: fadeInUp 0.6s ease;
+    }
+
+    @@keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .dashboard-hero {
+        background: linear-gradient(135deg, #f8f9fc 0%, #fff 100%);
+        padding: 2rem 2.5rem;
+        border-radius: 20px;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .dashboard-hero::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -10%;
+        width: 400px;
+        height: 400px;
+        background: linear-gradient(135deg, rgba(255, 107, 53, 0.08) 0%, rgba(26, 35, 50, 0.05) 100%);
+        border-radius: 50%;
+        z-index: 0;
+    }
+
+    .hero-text {
+        position: relative;
+        z-index: 1;
+    }
+
+    .dashboard-title {
+        font-size: 2rem;
+        font-weight: 800;
+        color: var(--primary);
+        margin: 0 0 0.5rem 0;
+        line-height: 1.2;
+    }
+
+    .dashboard-subtitle {
+        font-size: 1rem;
+        color: var(--text-secondary);
+        margin: 0;
+    }
+</style>
 
 @code {
     private List<Room>? rooms;
