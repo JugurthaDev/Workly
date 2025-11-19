@@ -10,15 +10,15 @@
     <h4>Add a new room</h4>
 
     <div class="mb-2">
-        <label class="form-label">Workspace Id</label>
-        <InputNumber @bind-Value="Model.WorkspaceId" class="form-control" />
-        <ValidationMessage For="() => Model.WorkspaceId" />
+        <label class="form-label">Name</label>
+        <InputText @bind-Value="Model.Name" class="form-control" placeholder="Ex: Salle Innovation" />
+        <ValidationMessage For="() => Model.Name" />
     </div>
 
     <div class="mb-2">
-        <label class="form-label">Name</label>
-        <InputText @bind-Value="Model.Name" class="form-control" />
-        <ValidationMessage For="() => Model.Name" />
+        <label class="form-label">Location</label>
+        <InputText @bind-Value="Model.Location" class="form-control" placeholder="Ex: Étage 2, Aile Est" />
+        <ValidationMessage For="() => Model.Location" />
     </div>
 
     <div class="mb-3">
@@ -33,10 +33,11 @@
 @code {
     public class RoomInput
     {
-        [Required] public int WorkspaceId { get; set; } = 1;
-
         [Required, MaxLength(150)]
         public string Name { get; set; } = string.Empty;
+
+        [Required, MaxLength(200)]
+        public string Location { get; set; } = string.Empty;
 
         [Range(1, 200)]
         public int Capacity { get; set; } = 4;
@@ -56,8 +57,9 @@
     {
         var created = await Api.CreateRoomAsync(new Room
         {
-            WorkspaceId = Model.WorkspaceId,
+            WorkspaceId = 0, // Sera auto-assigné par le backend
             Name = Model.Name,
+            Location = Model.Location,
             Capacity = Model.Capacity
         });
 

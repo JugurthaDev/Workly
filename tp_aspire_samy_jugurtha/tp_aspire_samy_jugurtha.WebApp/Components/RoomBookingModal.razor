@@ -1,0 +1,374 @@
+@using System.ComponentModel.DataAnnotations
+@using System.Globalization
+@using System.Net
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Forms
+@using tp_aspire_samy_jugurtha.WebApp.Models
+@using tp_aspire_samy_jugurtha.WebApp.Clients
+@inject IWorklyClient Api
+
+@if (IsVisible && Room is not null)
+{
+    <div class="modal-container">
+        <div class="modal-overlay" @onclick="CloseAsync"></div>
+        <div class="modal-panel" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <svg class="modal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="9" y1="9" x2="15" y2="9"></line>
+                        <line x1="9" y1="15" x2="15" y2="15"></line>
+                    </svg>
+                    Réserver @Room.Name
+                </h3>
+                <button class="modal-close" @onclick="CloseAsync">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+
+            <EditForm class="booking-form" EditContext="editContext" OnValidSubmit="SubmitAsync" OnInvalidSubmit="HandleInvalidSubmit">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+
+                <div class="modal-body">
+                    @if (!string.IsNullOrEmpty(_errorMessage))
+                    {
+                        <div class="booking-alert">@_errorMessage</div>
+                    }
+
+                    <section class="booking-summary">
+                        <div class="summary-card">
+                            <div class="summary-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                    <path d="M5.5 21a6.5 6.5 0 0 1 13 0"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="summary-label">Utilisateur</p>
+                                <p class="summary-value">@CurrentUserLabel</p>
+                            </div>
+                        </div>
+
+                        <div class="summary-card">
+                            <div class="summary-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="summary-label">Salle</p>
+                                <p class="summary-value">@Room.Name <span class="summary-chip">#@Room.Id</span></p>
+                                <span class="summary-subtitle">Capacité : @Room.Capacity personnes</span>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="booking-fields">
+                        <div>
+                            <label class="field-label">Début</label>
+                            <input type="datetime-local"
+                                   class="field-input"
+                                   value="@Model.StartLocalText"
+                                   @oninput="HandleStartChanged"
+                                   @onchange="HandleStartChanged" />
+                            <ValidationMessage For="() => Model.StartUtc" />
+                        </div>
+
+                        <div>
+                            <label class="field-label">Fin</label>
+                            <input type="datetime-local"
+                                   class="field-input"
+                                   value="@Model.EndLocalText"
+                                   @oninput="HandleEndChanged"
+                                   @onchange="HandleEndChanged" />
+                            <ValidationMessage For="() => Model.EndUtc" />
+                        </div>
+                    </section>
+
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" type="button" @onclick="CloseAsync">Annuler</button>
+                    <button class="btn btn-primary" type="submit" disabled="@_isSubmitting">
+                        @if (_isSubmitting)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                        }
+                        Confirmer la réservation
+                    </button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}
+
+@code {
+    private BookingInput Model = BookingInput.CreateDefault();
+    private EditContext? editContext;
+    private string? _errorMessage;
+    private bool _isSubmitting;
+
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public Room? Room { get; set; }
+    [Parameter] public string CurrentUserLabel { get; set; } = string.Empty;
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback<Room> OnBooked { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        editContext ??= CreateEditContext(Model);
+    }
+
+    private async Task SubmitAsync()
+    {
+        if (Room is null)
+        {
+            return;
+        }
+
+        _errorMessage = null;
+        _isSubmitting = true;
+
+        var normalizedStartUtc = NormalizeUtc(Model.StartUtc);
+        var normalizedEndUtc = NormalizeUtc(Model.EndUtc);
+
+        if (normalizedEndUtc <= normalizedStartUtc)
+        {
+            _errorMessage = "La fin doit être postérieure au début.";
+            _isSubmitting = false;
+            return;
+        }
+
+        try
+        {
+            var booking = new Booking
+            {
+                AppUserId = 0, // sera défini côté API à partir du token
+                ResourceType = ResourceType.Room,
+                ResourceId = Room.Id,
+                StartUtc = normalizedStartUtc,
+                EndUtc = normalizedEndUtc,
+                Status = BookingStatus.Confirmed
+            };
+
+            await Api.CreateBookingAsync(booking);
+            _errorMessage = null;
+            await OnBooked.InvokeAsync(Room);
+            await CloseAsync();
+        }
+        catch (BookingConflictException conflictEx)
+        {
+            _errorMessage = BuildConflictMessage(conflictEx);
+        }
+        catch (HttpRequestException ex)
+        {
+            if (ex.StatusCode == HttpStatusCode.Conflict)
+            {
+                _errorMessage = "Ce créneau est déjà réservé.";
+            }
+            else if (ex.StatusCode == HttpStatusCode.Unauthorized)
+            {
+                _errorMessage = "Votre session a expiré. Merci de vous reconnecter.";
+            }
+            else
+            {
+                _errorMessage = "Impossible de créer la réservation pour le moment.";
+            }
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private async Task CloseAsync()
+    {
+        ResetForm();
+        _errorMessage = null;
+        await OnClose.InvokeAsync();
+    }
+
+    private void HandleInvalidSubmit(EditContext context)
+    {
+        _errorMessage = "Merci de vérifier les dates sélectionnées.";
+    }
+
+    private void ResetForm()
+    {
+        Model = BookingInput.CreateDefault();
+        editContext = CreateEditContext(Model);
+    }
+
+    private void HandleStartChanged(ChangeEventArgs args)
+    {
+        if (TryGetUtcFromInput(args.Value, out var utc))
+        {
+            Model.StartUtc = utc;
+            editContext?.NotifyFieldChanged(new FieldIdentifier(Model, nameof(Model.StartUtc)));
+        }
+    }
+
+    private void HandleEndChanged(ChangeEventArgs args)
+    {
+        if (TryGetUtcFromInput(args.Value, out var utc))
+        {
+            Model.EndUtc = utc;
+            editContext?.NotifyFieldChanged(new FieldIdentifier(Model, nameof(Model.EndUtc)));
+        }
+    }
+
+    private static DateTime NormalizeUtc(DateTime dateTime)
+    {
+        var utc = dateTime.Kind switch
+        {
+            DateTimeKind.Unspecified => DateTime.SpecifyKind(dateTime, DateTimeKind.Utc),
+            DateTimeKind.Local => dateTime.ToUniversalTime(),
+            _ => dateTime
+        };
+
+        return new DateTime(utc.Year, utc.Month, utc.Day, utc.Hour, utc.Minute, 0, DateTimeKind.Utc);
+    }
+
+    private static string FormatLocalLabel(DateTime utcDate)
+    {
+        var local = DateTime.SpecifyKind(utcDate, DateTimeKind.Utc).ToLocalTime();
+        return local.ToString("dd/MM/yyyy HH:mm");
+    }
+
+    private static string BuildConflictMessage(BookingConflictException conflictEx)
+    {
+        if (conflictEx.ExistingStartUtc.HasValue && conflictEx.ExistingEndUtc.HasValue)
+        {
+            var start = FormatLocalLabel(conflictEx.ExistingStartUtc.Value);
+            var end = FormatLocalLabel(conflictEx.ExistingEndUtc.Value);
+            return $"Ce créneau est déjà réservé du {start} au {end}.";
+        }
+
+        return conflictEx.Message ?? "Ce créneau est déjà réservé.";
+    }
+
+    private static EditContext CreateEditContext(object model)
+    {
+        return new EditContext(model);
+    }
+
+    private static bool TryGetUtcFromInput(object? value, out DateTime utc)
+    {
+        switch (value)
+        {
+            case DateTime dateTime:
+                utc = NormalizeUtc(DateTime.SpecifyKind(dateTime, DateTimeKind.Local).ToUniversalTime());
+                return true;
+            case DateTimeOffset dateTimeOffset:
+                utc = NormalizeUtc(dateTimeOffset.LocalDateTime.ToUniversalTime());
+                return true;
+            case string text when TryParseLocal(text, out var parsed):
+                utc = parsed;
+                return true;
+            default:
+                utc = NormalizeUtc(DateTime.UtcNow);
+                return false;
+        }
+    }
+
+    private static bool TryParseLocal(string? value, out DateTime utc)
+    {
+        if (!string.IsNullOrWhiteSpace(value) &&
+            DateTime.TryParseExact(value, "yyyy-MM-ddTHH:mm", CultureInfo.InvariantCulture,
+                DateTimeStyles.AssumeLocal, out var local))
+        {
+            var converted = DateTime.SpecifyKind(local, DateTimeKind.Local).ToUniversalTime();
+            utc = NormalizeUtc(converted);
+            return true;
+        }
+
+        utc = NormalizeUtc(DateTime.UtcNow);
+        return false;
+    }
+
+    private class BookingInput
+    {
+        [Required]
+        public DateTime StartUtc { get; set; }
+
+        [Required]
+        [DateGreaterThan(nameof(StartUtc), ErrorMessage = "La fin doit être postérieure au début.")]
+        public DateTime EndUtc { get; set; }
+
+        public string StartLocalText
+        {
+            get => FormatLocal(StartUtc);
+            set
+            {
+                if (TryParseLocal(value, out var utc))
+                {
+                    StartUtc = utc;
+                }
+            }
+        }
+
+        public string EndLocalText
+        {
+            get => FormatLocal(EndUtc);
+            set
+            {
+                if (TryParseLocal(value, out var utc))
+                {
+                    EndUtc = utc;
+                }
+            }
+        }
+
+        public static BookingInput CreateDefault()
+        {
+            var now = NormalizeUtc(DateTime.UtcNow);
+            return new BookingInput
+            {
+                StartUtc = now.AddHours(1),
+                EndUtc = now.AddHours(2)
+            };
+        }
+
+        private static string FormatLocal(DateTime utcDate)
+        {
+            var local = DateTime.SpecifyKind(utcDate, DateTimeKind.Utc).ToLocalTime();
+            return local.ToString("yyyy-MM-ddTHH:mm");
+        }
+
+        private static bool TryParseLocal(string? value, out DateTime utc)
+            => RoomBookingModal.TryParseLocal(value, out utc);
+    }
+
+    private class DateGreaterThanAttribute : ValidationAttribute
+    {
+        private readonly string _otherPropName;
+        public DateGreaterThanAttribute(string otherPropName)
+        {
+            _otherPropName = otherPropName;
+        }
+
+        protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
+        {
+            var otherProp = validationContext.ObjectType.GetProperty(_otherPropName);
+            if (otherProp is null)
+            {
+                return ValidationResult.Success;
+            }
+
+            var start = otherProp.GetValue(validationContext.ObjectInstance) as DateTime?;
+            var end = value as DateTime?;
+
+            if (start.HasValue && end.HasValue && end <= start)
+            {
+                return new ValidationResult(ErrorMessage);
+            }
+
+            return ValidationResult.Success;
+        }
+    }
+}
