@@ -27,6 +27,15 @@ jobs:
         with:
           dotnet-version: "9.0.x"
 
+      - name: Remove missing E2E project from solution (if absent)
+        run: |
+          set -e
+          E2E="tp_aspire_samy_jugurtha/tp_aspire_samy_jugurtha.WebApp.E2E/tp_aspire_samy_jugurtha.WebApp.E2E.csproj"
+          if [ ! -f "$E2E" ]; then
+            echo "E2E project not found, removing from solution to unblock CI"
+            dotnet sln "$SOLUTION_PATH" remove "$E2E" || true
+          fi
+
       - name: Cache NuGet packages
         uses: actions/cache@v4
         with:
@@ -104,12 +113,23 @@ jobs:
           EOF
           chmod 600 ~/.ssh/id_gha
 
-          # known_hosts
-          if [ -n "${{ secrets.SSH_KNOWN_HOSTS }}" ]; then
-            echo "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
-          else
-            ssh-keyscan -p "${{ secrets.DEPLOY_SSH_PORT }}" "${{ secrets.DEPLOY_SSH_HOST }}" >> ~/.ssh/known_hosts
-          fi
+      - name: Write known_hosts from secret (if provided)
+        if: ${{ env.KNOWN_HOSTS != '' }}
+        env:
+          KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          echo "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: Scan host to populate known_hosts (fallback)
+        if: ${{ env.KNOWN_HOSTS == '' }}
+        env:
+          KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          ssh-keyscan -p "${{ secrets.DEPLOY_SSH_PORT }}" "${{ secrets.DEPLOY_SSH_HOST }}" >> ~/.ssh/known_hosts
           chmod 644 ~/.ssh/known_hosts
 
       - name: Test SSH connectivity (debug)

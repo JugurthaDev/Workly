@@ -23,8 +23,8 @@
 │                      Traefik (Edge)                      │
 │          reverse proxy + ACME DNS challenge             │
 └──────────────┬───────────────────────┬──────────────────┘
-                │                       │
-            (HTTPS)                       (HTTPS)
+               │                       │
+            (HTTPS)                   (HTTPS)
                 │                       │
             WebApp (Blazor Server)   Keycloak (OIDC Provider)
                 │                       │
