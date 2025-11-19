@@ -78,7 +78,7 @@ else
                                     <p class="booking-resource-id">@(booking.ResourceType == ResourceType.Room && roomNames.ContainsKey(booking.ResourceId) ? roomNames[booking.ResourceId] : $"ID: #{booking.ResourceId}")</p>
                                 </div>
                             </div>
-                            <span class="badge badge-@statusClass">@booking.Status</span>
+                            <span class="badge badge-@statusClass">@GetStatusLabel(booking.Status)</span>
                         </div>
                         
                         <div class="booking-card-body-modern">
@@ -334,5 +334,16 @@ else
         if (duration.TotalHours >= 1)
             return $"{(int)duration.TotalHours} heure(s)";
         return $"{(int)duration.TotalMinutes} minute(s)";
+    }
+
+    private string GetStatusLabel(BookingStatus status)
+    {
+        return status switch
+        {
+            BookingStatus.Confirmed => "Confirmée",
+            BookingStatus.Pending => "En attente",
+            BookingStatus.Cancelled => "Annulée",
+            _ => "Inconnu"
+        };
     }
 }

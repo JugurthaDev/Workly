@@ -7,7 +7,7 @@
 ## Sommaire
 - [Architecture](#architecture)
 - [Technologies](#technologies)
- - [Schéma de la base de données](#schéma-de-la-base-de-données)
+- [Schéma de la base de données](#schéma-de-la-base-de-données)
 - [Fonctionnalités](#fonctionnalités)
 - [Déploiement](#déploiement)
 - [API](#api)

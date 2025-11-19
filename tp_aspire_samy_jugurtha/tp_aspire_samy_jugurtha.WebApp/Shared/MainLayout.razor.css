@@ -21,52 +21,35 @@
 
 /* Logo Container */
 .logo-container {
-    padding: 2rem 1.5rem;
+    padding: 2.5rem 2rem;
     border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    background: linear-gradient(135deg, #f8f9fc 0%, #fff 100%);
+    background: white;
+    text-align: center;
 }
 
-.logo-wrapper {
-    width: 60px;
-    height: 60px;
-    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
-    border-radius: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 8px 16px rgba(255, 107, 53, 0.3);
-    padding: 8px;
-}
-
-.workly-logo-img {
+.brand-info-full {
     width: 100%;
-    height: 100%;
-    object-fit: contain;
-    /* Pas de filtre pour garder les couleurs naturelles du logo */
-}
-
-.brand-info {
-    flex: 1;
 }
 
 .brand-name {
-    font-size: 1.5rem;
-    font-weight: 800;
-    margin: 0;
-    color: var(--primary);
-    letter-spacing: -0.5px;
+    font-size: 2rem;
+    font-weight: 900;
+    margin: 0 0 0.5rem 0;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -1px;
+    line-height: 1;
 }
 
 .brand-tagline {
-    font-size: 0.75rem;
-    color: var(--accent);
+    font-size: 0.8rem;
+    color: var(--text-secondary);
     margin: 0;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 1.5px;
 }
 
 /* Navigation */
@@ -74,117 +57,153 @@
     flex: 1;
     padding: 2rem 0;
     overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
 }
 
 .main-nav .nav-link {
     display: flex;
     align-items: center;
-    gap: 1rem;
-    padding: 0.875rem 1.5rem;
+    gap: 1.25rem;
+    padding: 1.25rem 1.5rem;
     color: var(--text-secondary);
     text-decoration: none;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
-    font-weight: 600;
-    margin: 0.25rem 0.75rem;
-    border-radius: 12px;
-    font-size: 0.95rem;
+    font-weight: 700;
+    margin: 0 1rem;
+    border-radius: 16px;
+    font-size: 1.05rem;
+    letter-spacing: -0.2px;
 }
 
-.main-nav .nav-link::before {
+.main-nav .nav-link::after {
     content: '';
     position: absolute;
-    left: 0;
+    right: 1.25rem;
     top: 50%;
     transform: translateY(-50%);
-    width: 4px;
-    height: 0;
-    background: linear-gradient(180deg, var(--accent) 0%, var(--accent-light) 100%);
-    border-radius: 0 4px 4px 0;
-    transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    width: 8px;
+    height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    opacity: 0;
+    transition: all 0.3s ease;
 }
 
 .main-nav .nav-link:hover {
     color: var(--accent);
-    background: linear-gradient(90deg, rgba(255, 107, 53, 0.08) 0%, rgba(255, 107, 53, 0.03) 100%);
-    transform: translateX(4px);
+    background: linear-gradient(90deg, rgba(255, 107, 53, 0.12) 0%, rgba(255, 107, 53, 0.06) 100%);
+    transform: translateX(8px);
+    box-shadow: 0 6px 16px rgba(255, 107, 53, 0.2);
 }
 
 .main-nav .nav-link:hover .nav-icon {
     stroke: var(--accent);
-    transform: scale(1.1);
+    transform: scale(1.2) rotate(5deg);
+}
+
+.main-nav .nav-link:hover::after {
+    opacity: 1;
+    right: 1rem;
 }
 
 .main-nav .nav-link.active {
     color: var(--accent);
-    background: linear-gradient(90deg, rgba(255, 107, 53, 0.15) 0%, rgba(255, 107, 53, 0.05) 100%);
-    box-shadow: 0 4px 12px rgba(255, 107, 53, 0.15);
+    background: linear-gradient(90deg, rgba(255, 107, 53, 0.15) 0%, rgba(255, 107, 53, 0.08) 100%);
+    box-shadow: 0 6px 20px rgba(255, 107, 53, 0.25);
+    font-weight: 800;
+    border: 2px solid var(--accent);
 }
 
-.main-nav .nav-link.active::before {
-    height: 70%;
+.main-nav .nav-link.active .nav-icon {
+    stroke: var(--accent);
+}
+
+.main-nav .nav-link.active::after {
+    background: var(--accent);
+    opacity: 1;
+    right: 1rem;
+    box-shadow: 0 0 10px rgba(255, 107, 53, 0.6);
 }
 
 .nav-icon {
-    width: 22px;
-    height: 22px;
-    stroke-width: 2;
-    transition: all 0.3s ease;
+    width: 26px;
+    height: 26px;
+    stroke-width: 2.5;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    flex-shrink: 0;
 }
 
 /* Sidebar Footer */
 .sidebar-footer {
     padding: 1.5rem;
     border-top: 1px solid var(--border);
-    background: linear-gradient(180deg, #ffffff 0%, #f8f9fc 100%);
+    background: white;
 }
 
 .user-info {
     display: flex;
     align-items: center;
-    gap: 0.875rem;
+    gap: 1rem;
     margin-bottom: 1rem;
-    padding: 0.75rem;
-    background: white;
-    border-radius: 12px;
-    border: 1px solid var(--border);
+    padding: 1rem;
+    background: linear-gradient(135deg, #f8f9fc 0%, #fff 100%);
+    border-radius: 14px;
+    border: 2px solid var(--border);
+    transition: all 0.3s ease;
+}
+
+.user-info:hover {
+    border-color: var(--accent);
+    box-shadow: 0 4px 12px rgba(255, 107, 53, 0.1);
+    transform: translateY(-2px);
 }
 
 .user-avatar {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 6px 16px rgba(102, 126, 234, 0.35);
+    flex-shrink: 0;
 }
 
 .user-avatar svg {
-    width: 24px;
-    height: 24px;
+    width: 26px;
+    height: 26px;
     stroke: white;
 }
 
 .user-details {
     flex: 1;
+    min-width: 0;
 }
 
 .user-name {
     margin: 0;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
     font-weight: 700;
     color: var(--primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .user-role {
     margin: 0;
-    font-size: 0.75rem;
-    color: var(--accent);
-    font-weight: 600;
+    font-size: 0.7rem;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 1px;
 }
 
 /* Main Content */

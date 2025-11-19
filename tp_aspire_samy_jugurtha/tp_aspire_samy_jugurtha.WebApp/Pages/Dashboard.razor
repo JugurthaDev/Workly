@@ -184,7 +184,7 @@
                                             @booking.StartUtc.ToString("dd/MM/yyyy HH:mm") - @booking.EndUtc.ToString("HH:mm")
                                         </div>
                                     </div>
-                                    <span class="badge-modern badge-modern-@GetStatusClass(booking.Status)">@booking.Status</span>
+                                    <span class="badge-modern badge-modern-@GetStatusClass(booking.Status)">@GetStatusLabel(booking.Status)</span>
                                 </div>
                             }
                         </div>
@@ -853,6 +853,20 @@
             BookingStatus.Pending => "warning",
             BookingStatus.Cancelled => "danger",
             _ => "info"
+        };
+    }
+
+    /// <summary>
+    /// Retourne le label traduit du statut
+    /// </summary>
+    private string GetStatusLabel(BookingStatus status)
+    {
+        return status switch
+        {
+            BookingStatus.Confirmed => "Confirmée",
+            BookingStatus.Pending => "En attente",
+            BookingStatus.Cancelled => "Annulée",
+            _ => "Inconnu"
         };
     }
 }
