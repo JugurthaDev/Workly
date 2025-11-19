@@ -74,8 +74,8 @@ else
                                     </svg>
                                 </div>
                                 <div>
-                                    <h3 class="booking-resource-name">@booking.ResourceType</h3>
-                                    <p class="booking-resource-id">ID: #@booking.ResourceId</p>
+                                    <h3 class="booking-resource-name">@GetResourceName(booking)</h3>
+                                    <p class="booking-resource-id">@(booking.ResourceType == ResourceType.Room && roomNames.ContainsKey(booking.ResourceId) ? roomNames[booking.ResourceId] : $"ID: #{booking.ResourceId}")</p>
                                 </div>
                             </div>
                             <span class="badge badge-@statusClass">@booking.Status</span>
@@ -206,12 +206,31 @@ else
 
 @code {
     private List<Booking>? bookings;
+    private List<Room>? rooms;
+    private Dictionary<int, string> roomNames = new();
 
     [CascadingParameter]
     public MainLayout? Layout { get; set; }
 
     protected override async Task OnInitializedAsync()
-        => await LoadBookings();
+    {
+        await LoadRooms();
+        await LoadBookings();
+    }
+
+    private async Task LoadRooms()
+    {
+        try
+        {
+            rooms = await Api.GetRoomsAsync();
+            roomNames = rooms?.ToDictionary(r => r.Id, r => r.Name) ?? new();
+        }
+        catch
+        {
+            rooms = null;
+            roomNames = new();
+        }
+    }
 
     private async Task LoadBookings()
     {
@@ -236,6 +255,15 @@ else
             bookings = new();
         }
     }
+    
+    private string GetResourceName(Booking booking)
+    {
+        if (booking.ResourceType == ResourceType.Room && roomNames.TryGetValue(booking.ResourceId, out var name))
+        {
+            return $"Salle {name}";
+        }
+        return $"{booking.ResourceType} #{booking.ResourceId}";
+    }
 
     private async Task HandleBookingAdded()
     {
@@ -250,7 +278,7 @@ else
     {
         Layout?.ShowInfoNotification(
             "Modification",
-            $"Modification de la réservation {booking.ResourceType} #{booking.ResourceId}"
+            $"Modification de la réservation {GetResourceName(booking)}"
         );
         // Logique de modification à implémenter
     }
@@ -259,7 +287,7 @@ else
     {
         Layout?.ShowWarningNotification(
             "Annulation",
-            $"Êtes-vous sûr de vouloir annuler la réservation {booking.ResourceType} #{booking.ResourceId} ?"
+            $"Êtes-vous sûr de vouloir annuler la réservation {GetResourceName(booking)} ?"
         );
         
         // Simulation d'annulation

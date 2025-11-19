@@ -40,9 +40,22 @@
                     <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
                     <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
                 </svg>
-                ID de la ressource
+                @(Model.ResourceType == ResourceType.Room ? "Salle" : "Bureau")
             </label>
-            <InputNumber @bind-Value="Model.ResourceId" class="form-modern-control" />
+            @if (Model.ResourceType == ResourceType.Room && rooms != null)
+            {
+                <select @bind="Model.ResourceId" class="form-modern-control">
+                    <option value="0">-- Sélectionnez une salle --</option>
+                    @foreach (var room in rooms)
+                    {
+                        <option value="@room.Id">@room.Name (@room.Capacity places) - @room.Location</option>
+                    }
+                </select>
+            }
+            else
+            {
+                <InputNumber @bind-Value="Model.ResourceId" class="form-modern-control" />
+            }
             <ValidationMessage For="() => Model.ResourceId" class="form-modern-error" />
         </div>
 
@@ -203,6 +216,7 @@
     }
 
     private string? _errorMessage;
+    private List<Room>? rooms;
 
     // Petite validation custom : EndUtc > StartUtc
     public class DateGreaterThanAttribute : ValidationAttribute
@@ -236,6 +250,19 @@
     protected override void OnInitialized()
     {
         editContext = new EditContext(Model);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            rooms = await Api.GetRoomsAsync();
+        }
+        catch
+        {
+            // Si erreur, le formulaire affichera le champ numérique
+            rooms = null;
+        }
     }
 
     private async Task Submit()

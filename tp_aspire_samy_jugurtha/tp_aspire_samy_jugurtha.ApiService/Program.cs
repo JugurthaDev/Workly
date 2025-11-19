@@ -273,22 +273,40 @@ public class Program
         }
 
         // Salles avec noms de grandes villes mondiales
-        if (!await db.Rooms.AnyAsync())
+        // Note: On vérifie individuellement pour permettre l'ajout de nouvelles salles
+        var existingRoomNames = await db.Rooms.Select(r => r.Name).ToListAsync();
+        var roomsToAdd = new[]
         {
-            var rooms = new[]
+            new { Name = "Paris", Location = "Étage 2, Aile Est", Capacity = 8 },
+            new { Name = "New York", Location = "Étage 2, Aile Ouest", Capacity = 10 },
+            new { Name = "Tokyo", Location = "Étage 3, Centre", Capacity = 12 },
+            new { Name = "Londres", Location = "Étage 3, Aile Est", Capacity = 6 },
+            new { Name = "Berlin", Location = "Étage 3, Aile Ouest", Capacity = 8 },
+            new { Name = "Sydney", Location = "Étage 4, Centre", Capacity = 10 },
+            new { Name = "Dubai", Location = "Étage 4, Aile Est", Capacity = 6 },
+            new { Name = "Singapour", Location = "Étage 4, Aile Ouest", Capacity = 8 },
+            new { Name = "Shanghai", Location = "Étage 5, Centre", Capacity = 12 },
+            new { Name = "Los Angeles", Location = "Étage 5, Aile Est", Capacity = 10 }
+        };
+
+        var workspaceId = (await db.Workspaces.FirstOrDefaultAsync())?.Id ?? 1;
+        
+        foreach (var roomData in roomsToAdd)
+        {
+            if (!existingRoomNames.Contains(roomData.Name))
             {
-                new Room { WorkspaceId = 1, Name = "Paris", Location = "Étage 2, Aile Est", Capacity = 8 },
-                new Room { WorkspaceId = 1, Name = "New York", Location = "Étage 2, Aile Ouest", Capacity = 10 },
-                new Room { WorkspaceId = 1, Name = "Tokyo", Location = "Étage 3, Centre", Capacity = 12 },
-                new Room { WorkspaceId = 1, Name = "Londres", Location = "Étage 3, Aile Est", Capacity = 6 },
-                new Room { WorkspaceId = 1, Name = "Berlin", Location = "Étage 3, Aile Ouest", Capacity = 8 },
-                new Room { WorkspaceId = 1, Name = "Sydney", Location = "Étage 4, Centre", Capacity = 10 },
-                new Room { WorkspaceId = 1, Name = "Dubai", Location = "Étage 4, Aile Est", Capacity = 6 },
-                new Room { WorkspaceId = 1, Name = "Singapour", Location = "Étage 4, Aile Ouest", Capacity = 8 },
-                new Room { WorkspaceId = 1, Name = "Shanghai", Location = "Étage 5, Centre", Capacity = 12 },
-                new Room { WorkspaceId = 1, Name = "Los Angeles", Location = "Étage 5, Aile Est", Capacity = 10 }
-            };
-            db.Rooms.AddRange(rooms);
+                db.Rooms.Add(new Room 
+                { 
+                    WorkspaceId = workspaceId, 
+                    Name = roomData.Name, 
+                    Location = roomData.Location, 
+                    Capacity = roomData.Capacity 
+                });
+            }
+        }
+        
+        if (db.ChangeTracker.HasChanges())
+        {
             await db.SaveChangesAsync();
         }
 
