@@ -1,117 +1,112 @@
-namespace tp_aspire_samy_jugurtha.WebApp.Clients;
-
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using tp_aspire_samy_jugurtha.WebApp.Models;
 
+namespace tp_aspire_samy_jugurtha.WebApp.Clients;
+
 public class WorklyClient(HttpClient http) : IWorklyClient
 {
-    private static readonly JsonSerializerOptions JsonOpts = new()
+    private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true
     };
 
-    // ----- Workspaces -----
     public async Task<List<Workspace>> GetWorkspacesAsync(CancellationToken ct = default)
     {
-        var resp = await http.GetAsync("/api/workspaces", ct);
-        if (!resp.IsSuccessStatusCode)
-        {
-            resp.EnsureSuccessStatusCode();
-        }
-        return await resp.Content.ReadFromJsonAsync<List<Workspace>>(JsonOpts, ct) ?? new List<Workspace>();
+        var response = await http.GetAsync("/api/workspaces", ct);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<List<Workspace>>(JsonOptions, ct) ?? [];
     }
 
-    public async Task<Workspace?> CreateWorkspaceAsync(Workspace ws, CancellationToken ct = default)
+    public async Task<Workspace?> CreateWorkspaceAsync(Workspace workspace, CancellationToken ct = default)
     {
-        var resp = await http.PostAsJsonAsync("/api/workspaces", ws, JsonOpts, ct);
-        if (!resp.IsSuccessStatusCode)
-        {
-            resp.EnsureSuccessStatusCode();
-        }
-        return await resp.Content.ReadFromJsonAsync<Workspace>(JsonOpts, ct);
+        var response = await http.PostAsJsonAsync("/api/workspaces", workspace, JsonOptions, ct);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<Workspace>(JsonOptions, ct);
     }
 
-    // ----- Rooms -----
     public async Task<List<Room>> GetRoomsAsync(CancellationToken ct = default)
     {
-        var resp = await http.GetAsync("/api/rooms", ct);
-        if (resp.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+        var response = await http.GetAsync("/api/rooms", ct);
+        
+        if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
             throw new UnauthorizedAccessException();
 
-        resp.EnsureSuccessStatusCode();
-        return await resp.Content.ReadFromJsonAsync<List<Room>>(JsonOpts, ct) ?? new List<Room>();
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<List<Room>>(JsonOptions, ct) ?? [];
     }
 
     public async Task<Room?> CreateRoomAsync(Room room, CancellationToken ct = default)
     {
-        var resp = await http.PostAsJsonAsync("/api/rooms", room, JsonOpts, ct);
-        if (resp.IsSuccessStatusCode)
+        var response = await http.PostAsJsonAsync("/api/rooms", room, JsonOptions, ct);
+        
+        if (response.IsSuccessStatusCode)
         {
-            return await resp.Content.ReadFromJsonAsync<Room>(JsonOpts, ct);
+            return await response.Content.ReadFromJsonAsync<Room>(JsonOptions, ct);
         }
 
-        if (resp.StatusCode == HttpStatusCode.NotFound)
+        if (response.StatusCode == HttpStatusCode.NotFound)
         {
-            // Workspace inexistant
-            var error = await resp.Content.ReadFromJsonAsync<ErrorResponse>(JsonOpts, ct);
+            var error = await response.Content.ReadFromJsonAsync<ErrorResponse>(JsonOptions, ct);
             throw new InvalidOperationException(error?.Message ?? "Workspace introuvable.");
         }
 
-        if (resp.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+        if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
             throw new UnauthorizedAccessException();
 
-        resp.EnsureSuccessStatusCode();
+        response.EnsureSuccessStatusCode();
         return null;
     }
 
-    // ----- Bookings -----
     public async Task<List<Booking>> GetBookingsAsync(CancellationToken ct = default)
     {
-        var resp = await http.GetAsync("/api/bookings", ct);
-        if (resp.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+        var response = await http.GetAsync("/api/bookings", ct);
+        
+        if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
             throw new UnauthorizedAccessException();
 
-        resp.EnsureSuccessStatusCode();
-        return await resp.Content.ReadFromJsonAsync<List<Booking>>(JsonOpts, ct) ?? new List<Booking>();
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<List<Booking>>(JsonOptions, ct) ?? [];
     }
 
     public async Task<List<Booking>> GetAllBookingsAsync(CancellationToken ct = default)
     {
-        var resp = await http.GetAsync("/api/bookings/all", ct);
-        if (resp.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+        var response = await http.GetAsync("/api/bookings/all", ct);
+        
+        if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
             throw new UnauthorizedAccessException();
 
-        resp.EnsureSuccessStatusCode();
-        return await resp.Content.ReadFromJsonAsync<List<Booking>>(JsonOpts, ct) ?? new List<Booking>();
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<List<Booking>>(JsonOptions, ct) ?? [];
     }
 
     public async Task<Booking?> CreateBookingAsync(Booking booking, CancellationToken ct = default)
     {
-        var resp = await http.PostAsJsonAsync("/api/bookings", booking, JsonOpts, ct);
-        if (resp.IsSuccessStatusCode)
+        var response = await http.PostAsJsonAsync("/api/bookings", booking, JsonOptions, ct);
+        
+        if (response.IsSuccessStatusCode)
         {
-            return await resp.Content.ReadFromJsonAsync<Booking>(JsonOpts, ct);
+            return await response.Content.ReadFromJsonAsync<Booking>(JsonOptions, ct);
         }
 
-        if (resp.StatusCode == HttpStatusCode.Conflict)
+        if (response.StatusCode == HttpStatusCode.Conflict)
         {
-            var conflict = await resp.Content.ReadFromJsonAsync<BookingConflictResponse>(JsonOpts, ct);
+            var conflict = await response.Content.ReadFromJsonAsync<BookingConflictResponse>(JsonOptions, ct);
             throw new BookingConflictException(
                 conflict?.Message ?? "Ce créneau est déjà réservé.",
                 conflict?.ExistingStartUtc,
                 conflict?.ExistingEndUtc);
         }
 
-        resp.EnsureSuccessStatusCode();
+        response.EnsureSuccessStatusCode();
         return null;
     }
 
     public async Task DeleteBookingAsync(int bookingId, CancellationToken ct = default)
     {
-        var resp = await http.DeleteAsync($"/api/bookings/{bookingId}", ct);
-        resp.EnsureSuccessStatusCode();
+        var response = await http.DeleteAsync($"/api/bookings/{bookingId}", ct);
+        response.EnsureSuccessStatusCode();
     }
 
     private sealed record BookingConflictResponse(string? Message, DateTime? ExistingStartUtc, DateTime? ExistingEndUtc);

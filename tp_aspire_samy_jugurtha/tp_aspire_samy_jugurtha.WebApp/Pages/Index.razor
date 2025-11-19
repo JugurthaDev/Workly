@@ -210,9 +210,9 @@
 </section>
 
 @code {
+    /// <summary>Redirige vers le dashboard si l'utilisateur est déjà authentifié</summary>
     protected override async Task OnInitializedAsync()
     {
-        // Redirige automatiquement vers le dashboard si l'utilisateur est déjà connecté
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         if (authState.User.Identity?.IsAuthenticated == true)
         {

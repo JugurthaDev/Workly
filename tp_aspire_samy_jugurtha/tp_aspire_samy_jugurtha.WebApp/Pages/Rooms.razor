@@ -531,8 +531,8 @@ else
 @code {
     private List<Room>? rooms;
     private List<Booking>? _bookings;
-    private bool _showModal = false;
-    private bool _showBookingModal = false;
+    private bool _showModal;
+    private bool _showBookingModal;
     private Room? _selectedRoom;
     private Room? _roomToBook;
     private string _currentUserLabel = string.Empty;
@@ -549,6 +549,7 @@ else
         public double Height { get; set; }
     }
 
+    /// <summary>Initialise le composant et charge les données</summary>
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
@@ -561,6 +562,7 @@ else
         await LoadRooms();
     }
 
+    /// <summary>Charge les salles et réservations depuis l'API</summary>
     private async Task LoadRooms()
     {
         try
@@ -570,19 +572,19 @@ else
         }
         catch (UnauthorizedAccessException)
         {
-            var ret = Uri.EscapeDataString(Navigation.Uri);
-            Navigation.NavigateTo($"/authentication/login?returnUrl={ret}", forceLoad: true);
+            var returnUrl = Uri.EscapeDataString(Navigation.Uri);
+            Navigation.NavigateTo($"/authentication/login?returnUrl={returnUrl}", forceLoad: true);
         }
         catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.Unauthorized || ex.StatusCode == HttpStatusCode.Forbidden)
         {
-            var ret = Uri.EscapeDataString(Navigation.Uri);
-            Navigation.NavigateTo($"/authentication/login?returnUrl={ret}", forceLoad: true);
+            var returnUrl = Uri.EscapeDataString(Navigation.Uri);
+            Navigation.NavigateTo($"/authentication/login?returnUrl={returnUrl}", forceLoad: true);
         }
         catch (Exception)
         {
             Layout?.ShowErrorNotification("Erreur", "Impossible de charger les salles pour le moment.");
-            rooms = new();
-            _bookings = new();
+            rooms = [];
+            _bookings = [];
         }
     }
 
@@ -592,25 +594,20 @@ else
         StateHasChanged();
     }
 
-    private List<RoomPosition> GenerateRoomPositions()
-    {
-        return new List<RoomPosition>
-        {
-            new RoomPosition { X = 80, Y = 80, Width = 240, Height = 240 },
-            new RoomPosition { X = 340, Y = 80, Width = 180, Height = 240 },
-            new RoomPosition { X = 680, Y = 80, Width = 180, Height = 240 },
-            new RoomPosition { X = 880, Y = 80, Width = 240, Height = 240 },
-            new RoomPosition { X = 200, Y = 480, Width = 180, Height = 240 },
-            new RoomPosition { X = 400, Y = 480, Width = 180, Height = 240 },
-            new RoomPosition { X = 680, Y = 480, Width = 180, Height = 240 },
-            new RoomPosition { X = 880, Y = 480, Width = 240, Height = 240 },
-        };
-    }
+    private List<RoomPosition> GenerateRoomPositions() =>
+    [
+        new() { X = 80, Y = 80, Width = 240, Height = 240 },
+        new() { X = 340, Y = 80, Width = 180, Height = 240 },
+        new() { X = 680, Y = 80, Width = 180, Height = 240 },
+        new() { X = 880, Y = 80, Width = 240, Height = 240 },
+        new() { X = 200, Y = 480, Width = 180, Height = 240 },
+        new() { X = 400, Y = 480, Width = 180, Height = 240 },
+        new() { X = 680, Y = 480, Width = 180, Height = 240 },
+        new() { X = 880, Y = 480, Width = 240, Height = 240 }
+    ];
 
-    private double GetDoorPosition(RoomPosition pos)
-    {
-        return pos.Y < 300 ? pos.Y + pos.Height - 8 : pos.Y;
-    }
+    private double GetDoorPosition(RoomPosition pos) => 
+        pos.Y < 300 ? pos.Y + pos.Height - 8 : pos.Y;
 
     private bool IsRoomOccupied(int roomId)
     {

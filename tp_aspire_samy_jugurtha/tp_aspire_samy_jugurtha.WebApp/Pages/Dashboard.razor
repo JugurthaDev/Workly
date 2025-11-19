@@ -814,20 +814,18 @@
     private List<Booking>? recentBookings;
     private Dictionary<int, string> roomNames = new();
     private bool isLoading = true;
-    private int totalRooms = 0;
-    private int totalBookings = 0;
-    private int occupancyRate = 0;
-    private int availableNow = 0;
+    private int totalRooms;
+    private int totalBookings;
+    private int occupancyRate;
+    private int availableNow;
 
-    /// <summary>
-    /// Initialisation : charge les données des salles et réservations, calcule les statistiques
-    /// </summary>
+    /// <summary>Charge les données et calcule les statistiques du tableau de bord</summary>
     protected override async Task OnInitializedAsync()
     {
         try
         {
             rooms = await Api.GetRoomsAsync();
-            roomNames = rooms?.ToDictionary(r => r.Id, r => r.Name) ?? new();
+            roomNames = rooms?.ToDictionary(r => r.Id, r => r.Name) ?? [];
             recentBookings = await Api.GetBookingsAsync();
             
             totalRooms = rooms?.Count ?? 0;
@@ -844,9 +842,6 @@
         }
     }
     
-    /// <summary>
-    /// Retourne le nom formaté de la ressource (salle ou bureau)
-    /// </summary>
     private string GetResourceName(Booking booking)
     {
         if (booking.ResourceType == ResourceType.Room && roomNames.TryGetValue(booking.ResourceId, out var name))
@@ -856,31 +851,19 @@
         return $"{booking.ResourceType} #{booking.ResourceId}";
     }
 
-    /// <summary>
-    /// Retourne la classe CSS appropriée selon le statut de la réservation
-    /// </summary>
-    private string GetStatusClass(BookingStatus status)
+    private string GetStatusClass(BookingStatus status) => status switch
     {
-        return status switch
-        {
-            BookingStatus.Confirmed => "success",
-            BookingStatus.Pending => "warning",
-            BookingStatus.Cancelled => "danger",
-            _ => "info"
-        };
-    }
+        BookingStatus.Confirmed => "success",
+        BookingStatus.Pending => "warning",
+        BookingStatus.Cancelled => "danger",
+        _ => "info"
+    };
 
-    /// <summary>
-    /// Retourne le label traduit du statut
-    /// </summary>
-    private string GetStatusLabel(BookingStatus status)
+    private string GetStatusLabel(BookingStatus status) => status switch
     {
-        return status switch
-        {
-            BookingStatus.Confirmed => "Confirmée",
-            BookingStatus.Pending => "En attente",
-            BookingStatus.Cancelled => "Annulée",
-            _ => "Inconnu"
-        };
-    }
+        BookingStatus.Confirmed => "Confirmée",
+        BookingStatus.Pending => "En attente",
+        BookingStatus.Cancelled => "Annulée",
+        _ => "Inconnu"
+    };
 }

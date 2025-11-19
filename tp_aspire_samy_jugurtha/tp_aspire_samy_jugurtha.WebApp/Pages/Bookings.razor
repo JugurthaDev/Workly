@@ -187,11 +187,12 @@ else
 @code {
     private List<Booking>? bookings;
     private List<Room>? rooms;
-    private Dictionary<int, string> roomNames = new();
+    private Dictionary<int, string> roomNames = [];
 
     [CascadingParameter]
     public MainLayout? Layout { get; set; }
 
+    /// <summary>Initialise le composant et charge les données</summary>
     protected override async Task OnInitializedAsync()
     {
         await LoadRooms();
@@ -203,12 +204,12 @@ else
         try
         {
             rooms = await Api.GetRoomsAsync();
-            roomNames = rooms?.ToDictionary(r => r.Id, r => r.Name) ?? new();
+            roomNames = rooms?.ToDictionary(r => r.Id, r => r.Name) ?? [];
         }
         catch
         {
             rooms = null;
-            roomNames = new();
+            roomNames = [];
         }
     }
 
@@ -220,84 +221,62 @@ else
         }
         catch (UnauthorizedAccessException)
         {
-            var ret = Uri.EscapeDataString(Navigation.Uri);
-            Navigation.NavigateTo($"/authentication/login?returnUrl={ret}", forceLoad: true);
+            var returnUrl = Uri.EscapeDataString(Navigation.Uri);
+            Navigation.NavigateTo($"/authentication/login?returnUrl={returnUrl}", forceLoad: true);
         }
         catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.Unauthorized || ex.StatusCode == HttpStatusCode.Forbidden)
         {
-            var ret = Uri.EscapeDataString(Navigation.Uri);
-            Navigation.NavigateTo($"/authentication/login?returnUrl={ret}", forceLoad: true);
+            var returnUrl = Uri.EscapeDataString(Navigation.Uri);
+            Navigation.NavigateTo($"/authentication/login?returnUrl={returnUrl}", forceLoad: true);
         }
         catch (Exception)
         {
-            // Autres erreurs backend/connectivité: éviter de casser la page et informer l'utilisateur
             Layout?.ShowErrorNotification("Erreur", "Impossible de charger les réservations pour le moment.");
-            bookings = new();
+            bookings = [];
         }
     }
     
-    private string GetResourceName(Booking booking)
-    {
-        if (booking.ResourceType == ResourceType.Room && roomNames.TryGetValue(booking.ResourceId, out var name))
-        {
-            return $"Salle {name}";
-        }
-        return $"{booking.ResourceType} #{booking.ResourceId}";
-    }
+    private string GetResourceName(Booking booking) =>
+        booking.ResourceType == ResourceType.Room && roomNames.TryGetValue(booking.ResourceId, out var name)
+            ? $"Salle {name}"
+            : $"{booking.ResourceType} #{booking.ResourceId}";
 
     private async Task HandleBookingAdded()
     {
         await LoadBookings();
-        Layout?.ShowSuccessNotification(
-            "Réservation créée !",
-            "Votre réservation a été enregistrée avec succès."
-        );
+        Layout?.ShowSuccessNotification("Réservation créée !", "Votre réservation a été enregistrée avec succès.");
     }
 
+    /// <summary>Annule une réservation existante</summary>
     private async Task HandleCancelBooking(Booking booking)
     {
         try
         {
-            // Appel à l'API pour supprimer la réservation
             await Api.DeleteBookingAsync(booking.Id);
-            
-            Layout?.ShowSuccessNotification(
-                "Réservation annulée",
-                $"La réservation {GetResourceName(booking)} a été annulée avec succès."
-            );
-            
+            Layout?.ShowSuccessNotification("Réservation annulée", $"La réservation {GetResourceName(booking)} a été annulée avec succès.");
             await LoadBookings();
         }
         catch (Exception ex)
         {
-            Layout?.ShowErrorNotification(
-                "Erreur",
-                $"Impossible d'annuler la réservation : {ex.Message}"
-            );
+            Layout?.ShowErrorNotification("Erreur", $"Impossible d'annuler la réservation : {ex.Message}");
         }
     }
 
-    private string GetStatusClass(BookingStatus status)
+    private string GetStatusClass(BookingStatus status) => status switch
     {
-        return status switch
-        {
-            BookingStatus.Confirmed => "success",
-            BookingStatus.Pending => "warning",
-            BookingStatus.Cancelled => "danger",
-            _ => "info"
-        };
-    }
+        BookingStatus.Confirmed => "success",
+        BookingStatus.Pending => "warning",
+        BookingStatus.Cancelled => "danger",
+        _ => "info"
+    };
 
-    private string GetStatusColor(BookingStatus status)
+    private string GetStatusColor(BookingStatus status) => status switch
     {
-        return status switch
-        {
-            BookingStatus.Confirmed => "linear-gradient(135deg, #10b981 0%, #059669 100%)",
-            BookingStatus.Pending => "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
-            BookingStatus.Cancelled => "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
-            _ => "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)"
-        };
-    }
+        BookingStatus.Confirmed => "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+        BookingStatus.Pending => "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
+        BookingStatus.Cancelled => "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
+        _ => "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)"
+    };
 
     private string GetDuration(DateTime start, DateTime end)
     {
@@ -309,14 +288,11 @@ else
         return $"{(int)duration.TotalMinutes} minute(s)";
     }
 
-    private string GetStatusLabel(BookingStatus status)
+    private string GetStatusLabel(BookingStatus status) => status switch
     {
-        return status switch
-        {
-            BookingStatus.Confirmed => "Confirmée",
-            BookingStatus.Pending => "En attente",
-            BookingStatus.Cancelled => "Annulée",
-            _ => "Inconnu"
-        };
-    }
+        BookingStatus.Confirmed => "Confirmée",
+        BookingStatus.Pending => "En attente",
+        BookingStatus.Cancelled => "Annulée",
+        _ => "Inconnu"
+    };
 }

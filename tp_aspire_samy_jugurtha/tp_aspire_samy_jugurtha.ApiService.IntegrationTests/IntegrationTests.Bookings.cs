@@ -107,7 +107,7 @@ public class IntegrationTests_Bookings : IClassFixture<CustomWebApplicationFacto
             AppUserId = 42,
             ResourceType = ResourceType.Room,
             ResourceId = 1,
-            StartUtc = baseStart.AddMinutes(30), // overlap
+            StartUtc = baseStart.AddMinutes(30),
             EndUtc = baseStart.AddHours(2)
         };
         var r2 = await client.PostAsJsonAsync("/api/bookings", b2);

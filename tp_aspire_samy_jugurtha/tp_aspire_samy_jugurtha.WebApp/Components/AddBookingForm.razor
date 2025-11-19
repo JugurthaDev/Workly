@@ -215,17 +215,11 @@
         public DateTime EndUtc { get; set; } = DateTime.UtcNow.AddHours(2);
     }
 
-    private string? _errorMessage;
-    private List<Room>? rooms;
-
-    // Petite validation custom : EndUtc > StartUtc
     public class DateGreaterThanAttribute : ValidationAttribute
     {
         private readonly string _otherPropertyName;
-        public DateGreaterThanAttribute(string otherPropertyName)
-        {
+        public DateGreaterThanAttribute(string otherPropertyName) => 
             _otherPropertyName = otherPropertyName;
-        }
 
         protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
         {
@@ -244,14 +238,15 @@
 
     private BookingInput Model = new();
     private EditContext? editContext;
+    private string? _errorMessage;
+    private List<Room>? rooms;
 
     [Parameter] public EventCallback OnBookingAdded { get; set; }
 
-    protected override void OnInitialized()
-    {
+    protected override void OnInitialized() => 
         editContext = new EditContext(Model);
-    }
 
+    /// <summary>Charge les salles disponibles au démarrage</summary>
     protected override async Task OnInitializedAsync()
     {
         try
@@ -260,11 +255,11 @@
         }
         catch
         {
-            // Si erreur, le formulaire affichera le champ numérique
             rooms = null;
         }
     }
 
+    /// <summary>Soumet le formulaire et crée une nouvelle réservation</summary>
     private async Task Submit()
     {
         _errorMessage = null;
@@ -273,7 +268,7 @@
         {
             var newBooking = new Booking
             {
-                AppUserId = 0, // sera défini côté API à partir du token
+                AppUserId = 0,
                 ResourceType = Model.ResourceType,
                 ResourceId = Model.ResourceId,
                 StartUtc = Model.StartUtc,
@@ -285,7 +280,7 @@
             if (created is not null)
             {
                 await OnBookingAdded.InvokeAsync();
-                Model = new BookingInput(); // reset
+                Model = new BookingInput();
                 editContext = new EditContext(Model);
                 _errorMessage = null;
                 StateHasChanged();

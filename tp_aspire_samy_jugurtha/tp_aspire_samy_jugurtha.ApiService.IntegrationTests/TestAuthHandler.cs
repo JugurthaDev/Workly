@@ -3,12 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Microsoft.AspNetCore.Http;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace tp_aspire_samy_jugurtha.ApiService.IntegrationTests;
 
@@ -41,7 +40,7 @@ public class TestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions
             new Claim(ClaimTypes.NameIdentifier, user),
             new Claim(ClaimTypes.Name, user)
         };
-        // Minimal APIs use RoleClaimType by default for [Authorize(Roles=..)] => ClaimTypes.Role is fine here
+        
         foreach (var role in roles.Select(x => x.Trim()).Where(x => !string.IsNullOrWhiteSpace(x)))
         {
             claims.Add(new Claim(ClaimTypes.Role, role));

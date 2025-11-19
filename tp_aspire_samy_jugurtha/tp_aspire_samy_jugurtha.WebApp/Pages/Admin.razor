@@ -95,10 +95,9 @@
 @code {
     private List<Booking>? bookings;
 
-    protected override async Task OnInitializedAsync()
-    {
+    /// <summary>Initialise le composant et charge les réservations</summary>
+    protected override async Task OnInitializedAsync() => 
         await LoadBookings();
-    }
 
     private async Task LoadBookings()
     {
@@ -109,20 +108,18 @@
         catch (Exception ex)
         {
             Console.WriteLine($"Erreur lors du chargement des réservations: {ex.Message}");
-            bookings = new List<Booking>();
+            bookings = [];
         }
     }
 
-    private string GetResourceName(Booking booking)
+    private string GetResourceName(Booking booking) => booking.ResourceType switch
     {
-        return booking.ResourceType switch
-        {
-            ResourceType.Room => $"Salle #{booking.ResourceId}",
-            ResourceType.Desk => $"Bureau #{booking.ResourceId}",
-            _ => $"Resource #{booking.ResourceId}"
-        };
-    }
+        ResourceType.Room => $"Salle #{booking.ResourceId}",
+        ResourceType.Desk => $"Bureau #{booking.ResourceId}",
+        _ => $"Resource #{booking.ResourceId}"
+    };
 
+    /// <summary>Supprime une réservation</summary>
     private async Task DeleteBooking(int bookingId)
     {
         try

@@ -4,7 +4,7 @@ public class Desk
 {
     public int Id { get; set; }
     public int WorkspaceId { get; set; }
-    public string Code { get; set; } = string.Empty; // ex: "D-3F-15"
+    public string Code { get; set; } = string.Empty;
 
     public Workspace? Workspace { get; set; }
 }

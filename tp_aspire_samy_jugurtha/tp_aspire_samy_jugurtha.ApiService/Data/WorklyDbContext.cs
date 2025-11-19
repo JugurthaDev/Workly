@@ -5,7 +5,7 @@ namespace tp_aspire_samy_jugurtha.ApiService.Data;
 
 public class WorklyDbContext : DbContext
 {
-    public WorklyDbContext(DbContextOptions<WorklyDbContext> options) : base(options) {}
+    public WorklyDbContext(DbContextOptions<WorklyDbContext> options) : base(options) { }
 
     public DbSet<AppUser> AppUsers => Set<AppUser>();
     public DbSet<Workspace> Workspaces => Set<Workspace>();
@@ -13,76 +13,74 @@ public class WorklyDbContext : DbContext
     public DbSet<Desk> Desks => Set<Desk>();
     public DbSet<Booking> Bookings => Set<Booking>();
 
-    protected override void OnModelCreating(ModelBuilder b)
+    protected override void OnModelCreating(ModelBuilder builder)
     {
-        // Tables & clés
-        b.Entity<AppUser>(e =>
+        builder.Entity<AppUser>(entity =>
         {
-            e.ToTable("T_AppUsers");
-            e.HasKey(x => x.Id);
-            e.HasIndex(x => x.Email).IsUnique();
-            e.Property(x => x.Email).IsRequired().HasMaxLength(200);
-            e.Property(x => x.DisplayName).IsRequired().HasMaxLength(200);
+            entity.ToTable("T_AppUsers");
+            entity.HasKey(x => x.Id);
+            entity.HasIndex(x => x.Email).IsUnique();
+            entity.Property(x => x.Email).IsRequired().HasMaxLength(200);
+            entity.Property(x => x.DisplayName).IsRequired().HasMaxLength(200);
         });
 
-        b.Entity<Workspace>(e =>
+        builder.Entity<Workspace>(entity =>
         {
-            e.ToTable("T_Workspaces");
-            e.HasKey(x => x.Id);
-            e.Property(x => x.Name).IsRequired().HasMaxLength(200);
-            e.Property(x => x.City).IsRequired().HasMaxLength(100);
+            entity.ToTable("T_Workspaces");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Name).IsRequired().HasMaxLength(200);
+            entity.Property(x => x.City).IsRequired().HasMaxLength(100);
         });
 
-        b.Entity<Room>(e =>
+        builder.Entity<Room>(entity =>
         {
-            e.ToTable("T_Rooms");
-            e.HasKey(x => x.Id);
-            e.Property(x => x.Name).IsRequired().HasMaxLength(150);
-            e.Property(x => x.Location).IsRequired().HasMaxLength(200);
-            e.Property(x => x.Capacity).IsRequired();
+            entity.ToTable("T_Rooms");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Name).IsRequired().HasMaxLength(150);
+            entity.Property(x => x.Location).IsRequired().HasMaxLength(200);
+            entity.Property(x => x.Capacity).IsRequired();
 
-            e.HasOne(x => x.Workspace)
-             .WithMany(w => w.Rooms)
-             .HasForeignKey(x => x.WorkspaceId)
-             .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(x => x.Workspace)
+                .WithMany(w => w.Rooms)
+                .HasForeignKey(x => x.WorkspaceId)
+                .OnDelete(DeleteBehavior.Cascade);
 
-            e.HasIndex(x => new { x.WorkspaceId, x.Name }).IsUnique();
+            entity.HasIndex(x => new { x.WorkspaceId, x.Name }).IsUnique();
         });
 
-        b.Entity<Desk>(e =>
+        builder.Entity<Desk>(entity =>
         {
-            e.ToTable("T_Desks");
-            e.HasKey(x => x.Id);
-            e.Property(x => x.Code).IsRequired().HasMaxLength(50);
+            entity.ToTable("T_Desks");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Code).IsRequired().HasMaxLength(50);
 
-            e.HasOne(x => x.Workspace)
-             .WithMany(w => w.Desks)
-             .HasForeignKey(x => x.WorkspaceId)
-             .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(x => x.Workspace)
+                .WithMany(w => w.Desks)
+                .HasForeignKey(x => x.WorkspaceId)
+                .OnDelete(DeleteBehavior.Cascade);
 
-            e.HasIndex(x => new { x.WorkspaceId, x.Code }).IsUnique();
+            entity.HasIndex(x => new { x.WorkspaceId, x.Code }).IsUnique();
         });
 
-        b.Entity<Booking>(e =>
+        builder.Entity<Booking>(entity =>
         {
-            e.ToTable("T_Bookings", t =>
+            entity.ToTable("T_Bookings", table =>
             {
-                t.HasCheckConstraint("CK_Bookings_StartBeforeEnd", "\"StartUtc\" < \"EndUtc\"");
+                table.HasCheckConstraint("CK_Bookings_StartBeforeEnd", "\"StartUtc\" < \"EndUtc\"");
             });
-            e.HasKey(x => x.Id);
-            e.Property(x => x.ResourceType).IsRequired();
-            e.Property(x => x.StartUtc).IsRequired();
-            e.Property(x => x.EndUtc).IsRequired();
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.ResourceType).IsRequired();
+            entity.Property(x => x.StartUtc).IsRequired();
+            entity.Property(x => x.EndUtc).IsRequired();
 
-            e.HasOne(x => x.AppUser)
-             .WithMany(u => u.Bookings)
-             .HasForeignKey(x => x.AppUserId)
-             .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(x => x.AppUser)
+                .WithMany(u => u.Bookings)
+                .HasForeignKey(x => x.AppUserId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-            // Index unique pour éviter les doublons, mais uniquement pour les réservations non annulées
-            e.HasIndex(x => new { x.ResourceType, x.ResourceId, x.StartUtc, x.EndUtc, x.Status });
+            entity.HasIndex(x => new { x.ResourceType, x.ResourceId, x.StartUtc, x.EndUtc, x.Status });
         });
 
-        base.OnModelCreating(b);
+        base.OnModelCreating(builder);
     }
 }

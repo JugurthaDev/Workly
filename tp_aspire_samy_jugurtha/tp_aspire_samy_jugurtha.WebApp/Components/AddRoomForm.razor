@@ -182,15 +182,15 @@
 
     private RoomInput Model = new();
     private EditContext? editContext;
-    private List<Workspace> Workspaces = new();
+    private List<Workspace> Workspaces = [];
+    private string? validationMessage;
 
-    [Parameter] public EventCallback OnRoomAdded { get; set; } // notifie la page parente
+    [Parameter] public EventCallback OnRoomAdded { get; set; }
 
-    protected override void OnInitialized()
-    {
+    protected override void OnInitialized() => 
         editContext = new EditContext(Model);
-    }
 
+    /// <summary>Charge les espaces de travail après le premier rendu</summary>
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
@@ -204,11 +204,12 @@
         }
     }
 
+    /// <summary>Soumet le formulaire et crée une nouvelle salle</summary>
     private async Task Submit()
     {
         if (Model.WorkspaceId <= 0)
         {
-            return; // validation côté UI déjà affichée
+            return;
         }
 
         Room? created = null;
@@ -243,13 +244,11 @@
 
         if (created is not null)
         {
-            await OnRoomAdded.InvokeAsync(); // demande à la page de recharger sa liste
-            Model = new RoomInput();         // reset du formulaire
+            await OnRoomAdded.InvokeAsync();
+            Model = new RoomInput();
             editContext = new EditContext(Model);
             validationMessage = null;
             StateHasChanged();
         }
     }
-
-    private string? validationMessage;
 }
