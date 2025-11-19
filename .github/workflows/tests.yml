@@ -1,0 +1,64 @@
+name: "Tests"
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "1"
+  SOLUTION_PATH: tp_aspire_samy_jugurtha/tp_aspire_samy_jugurtha.sln
+
+jobs:
+  test:
+    name: Run unit, integration and E2E tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-
+
+      - name: Restore
+        run: dotnet restore "$SOLUTION_PATH"
+
+      - name: Build
+        run: dotnet build "$SOLUTION_PATH" -c Release --no-restore
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-v1
+
+      - name: Install Playwright CLI
+        run: dotnet tool update --global Microsoft.Playwright.CLI || dotnet tool install --global Microsoft.Playwright.CLI
+
+      - name: Install Playwright browsers (with OS deps)
+        run: sudo ~/.dotnet/tools/playwright install --with-deps
+
+      - name: Test
+        run: dotnet test "$SOLUTION_PATH" -c Release --no-build --logger "trx;LogFileName=test-results.trx"
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            **/TestResults/*.trx
+            **/TestResults/*/*.trx

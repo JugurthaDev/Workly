@@ -1,4 +1,5 @@
 ![CI](https://github.com/JugurthaDev/Workly/actions/workflows/ci.yml/badge.svg)
+[![Tests](https://github.com/JugurthaDev/Workly/actions/workflows/tests.yml/badge.svg)](https://github.com/JugurthaDev/Workly/actions/workflows/tests.yml)
 
 # Workly
 
