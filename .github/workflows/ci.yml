@@ -1,4 +1,4 @@
-name: CI / Build, Docker & Deploy
+name: "Workly Pipeline • Build → Docker → Deploy"
 
 on:
   push:
