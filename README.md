@@ -7,6 +7,7 @@
 ## Sommaire
 - [Architecture](#architecture)
 - [Technologies](#technologies)
+ - [Schéma de la base de données](#schéma-de-la-base-de-données)
 - [Fonctionnalités](#fonctionnalités)
 - [Déploiement](#déploiement)
 - [API](#api)
@@ -37,6 +38,10 @@ Composants :
 - `tp_aspire_samy_jugurtha.AppHost` : Orchestrateur **.NET Aspire** pour le développement local (démarrage coordonné des projets + ressources conteneurisées, provisioning des realms Keycloak).
 - `tp_aspire_samy_jugurtha.ServiceDefaults` : Extensions partagées (service defaults / instrumentation).
 - `docker-compose.yml` : Orchestration de production (droplet DigitalOcean) avec Traefik + challenge DNS Cloudflare pour certificats.
+
+## Schéma de la base de données
+
+![Schéma de la base de données](.github/images/sql.png)
 
 ## Technologies
 - .NET 9 (`net9.0`)
