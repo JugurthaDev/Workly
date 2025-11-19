@@ -61,12 +61,9 @@ services:
       KC_HOSTNAME_STRICT_HTTPS: "true"
       KC_PROXY: edge
       PROXY_ADDRESS_FORWARDING: "true"
-      KC_CACHE_THEMES: "false"
-      KC_CACHE_TEMPLATES: "false"
     volumes:
       - ./tp_aspire_samy_jugurtha/tp_aspire_samy_jugurtha.AppHost/infra/keycloak/Workly-realm.json:/opt/keycloak/data/import/Workly-realm.json:ro
       - ./tp_aspire_samy_jugurtha/tp_aspire_samy_jugurtha.AppHost/infra/keycloak/master-realm.json:/opt/keycloak/data/import/master-realm.json:ro
-      - ./tp_aspire_samy_jugurtha/tp_aspire_samy_jugurtha.AppHost/infra/keycloak/themes/workly:/opt/keycloak/themes/workly:ro
     ports:
       - "8090:8080"
     command:

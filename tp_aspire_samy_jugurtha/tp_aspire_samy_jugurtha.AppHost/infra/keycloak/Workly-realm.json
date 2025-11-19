@@ -459,7 +459,7 @@
     "totpAppMicrosoftAuthenticatorName"
   ],
   "localizationTexts": {},
-  "loginTheme": "workly",
+  "loginTheme": "keycloak",
   "webAuthnPolicyRpEntityName": "keycloak",
   "webAuthnPolicySignatureAlgorithms": [
     "ES256",
