@@ -111,16 +111,7 @@
                 </div>
 
                 <div class="modal-footer">
-                    <button class="btn btn-secondary" @onclick="Close">Fermer</button>
-                    <button class="btn btn-primary" @onclick="OnBookRoom">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                            <line x1="16" y1="2" x2="16" y2="6"></line>
-                            <line x1="8" y1="2" x2="8" y2="6"></line>
-                            <line x1="3" y1="10" x2="21" y2="10"></line>
-                        </svg>
-                        Réserver cette salle
-                    </button>
+                    <button class="btn btn-primary" @onclick="Close">Fermer</button>
                 </div>
             }
         </div>
@@ -131,7 +122,6 @@
     [Parameter] public bool IsVisible { get; set; }
     [Parameter] public Room? Room { get; set; }
     [Parameter] public EventCallback OnClose { get; set; }
-    [Parameter] public EventCallback<Room> OnBook { get; set; }
 
     private void HandleBackdropClick()
     {
@@ -147,15 +137,6 @@
     private void Close()
     {
         OnClose.InvokeAsync();
-    }
-
-    private async Task OnBookRoom()
-    {
-        if (Room != null)
-        {
-            await OnBook.InvokeAsync(Room);
-        }
-        Close();
     }
 }
 

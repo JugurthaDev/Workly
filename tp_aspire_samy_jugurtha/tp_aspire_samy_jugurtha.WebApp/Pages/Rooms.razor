@@ -11,7 +11,7 @@
 
 <PageTitle>Salles - Workly</PageTitle>
 
-<RoomDetailsModal IsVisible="_showModal" Room="_selectedRoom" OnClose="CloseModal" OnBook="HandleBookRoom" />
+<RoomDetailsModal IsVisible="_showModal" Room="_selectedRoom" OnClose="CloseModal" />
 <RoomBookingModal IsVisible="_showBookingModal"
                   Room="_roomToBook"
                   CurrentUserLabel="@_currentUserLabel"
@@ -253,12 +253,6 @@ else
 
     private void QuickBookRoom(Room room)
         => OpenBookingModal(room);
-
-    private void HandleBookRoom(Room room)
-    {
-        CloseModal();
-        OpenBookingModal(room);
-    }
 
     private void OpenBookingModal(Room room)
     {
