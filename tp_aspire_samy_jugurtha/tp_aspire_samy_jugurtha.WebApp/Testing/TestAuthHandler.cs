@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Authentication;
@@ -8,12 +10,11 @@ namespace tp_aspire_samy_jugurtha.WebApp.Testing;
 
 public class TestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions>
 {
-    public const string Scheme = "Test";
+    public const string AuthScheme = "Test";
 
     public TestAuthHandler(IOptionsMonitor<AuthenticationSchemeOptions> options,
         ILoggerFactory logger,
-        UrlEncoder encoder,
-        ISystemClock clock) : base(options, logger, encoder, clock) { }
+        UrlEncoder encoder) : base(options, logger, encoder) { }
 
     protected override Task<AuthenticateResult> HandleAuthenticateAsync()
     {
@@ -28,9 +29,9 @@ public class TestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions
         };
         foreach (var r in roles) claims.Add(new Claim(ClaimTypes.Role, r));
 
-        var identity = new ClaimsIdentity(claims, Scheme);
+        var identity = new ClaimsIdentity(claims, AuthScheme);
         var principal = new ClaimsPrincipal(identity);
-        var ticket = new AuthenticationTicket(principal, Scheme);
+        var ticket = new AuthenticationTicket(principal, AuthScheme);
         return Task.FromResult(AuthenticateResult.Success(ticket));
     }
 }

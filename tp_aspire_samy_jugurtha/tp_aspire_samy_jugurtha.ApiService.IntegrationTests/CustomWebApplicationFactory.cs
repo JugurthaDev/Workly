@@ -38,7 +38,10 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
             {
                 options.DefaultAuthenticateScheme = TestAuthHandler.AuthScheme;
                 options.DefaultChallengeScheme = TestAuthHandler.AuthScheme;
-            }).AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(TestAuthHandler.AuthScheme, _ => { });
+            }).AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(TestAuthHandler.AuthScheme, options =>
+            {
+                options.TimeProvider = TimeProvider.System;
+            });
 
             // Replace DbContext to ensure InMemory provider is used
             var descriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<WorklyDbContext>));
