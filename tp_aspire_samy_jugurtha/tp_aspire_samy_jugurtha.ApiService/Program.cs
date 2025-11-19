@@ -13,8 +13,18 @@ builder.AddServiceDefaults();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
+var useInMemoryDb = builder.Configuration.GetValue<bool>("UseInMemoryDatabase", false);
 builder.Services.AddDbContext<WorklyDbContext>(opt =>
-    opt.UseNpgsql(builder.Configuration.GetConnectionString("workly")));
+{
+    if (useInMemoryDb)
+    {
+        opt.UseInMemoryDatabase("WorklyTests");
+    }
+    else
+    {
+        opt.UseNpgsql(builder.Configuration.GetConnectionString("workly"));
+    }
+});
 
 var authority = builder.Configuration["Authentication:OIDC:Authority"];
 var audience  = builder.Configuration["Authentication:OIDC:Audience"];
@@ -80,11 +90,16 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-using (var scope = app.Services.CreateScope())
+// Option to skip migrations/seeding (useful for tests)
+var runMigrations = app.Configuration.GetValue<bool>("RunMigrations", true);
+if (runMigrations)
 {
-    var db = scope.ServiceProvider.GetRequiredService<WorklyDbContext>();
-    db.Database.Migrate();
-    await SeedAsync(db);
+    using (var scope = app.Services.CreateScope())
+    {
+        var db = scope.ServiceProvider.GetRequiredService<WorklyDbContext>();
+        db.Database.Migrate();
+        await SeedAsync(db);
+    }
 }
 
 app.MapGet("/api/rooms", [Authorize] async (WorklyDbContext db) => await db.Rooms.AsNoTracking().ToListAsync());
@@ -149,3 +164,6 @@ static async Task SeedAsync(WorklyDbContext db)
         await db.SaveChangesAsync();
     }
 }
+
+// Expose Program class for WebApplicationFactory in tests
+public partial class Program { }
