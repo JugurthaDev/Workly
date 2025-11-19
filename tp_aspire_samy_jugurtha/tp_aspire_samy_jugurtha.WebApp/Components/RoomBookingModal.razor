@@ -10,8 +10,8 @@
 @if (IsVisible && Room is not null)
 {
     <div class="modal-container">
-        <div class="modal-overlay" @onclick="CloseAsync"></div>
-        <div class="modal-panel" @onclick:stopPropagation="true">
+        <div class="modal-overlay" @onclick="HandleOverlayClick"></div>
+        <div class="modal-panel" @onclick="HandlePanelClick" @onclick:stopPropagation="true">
             <div class="modal-header">
                 <h3 class="modal-title">
                     <svg class="modal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -184,6 +184,17 @@
         {
             _isSubmitting = false;
         }
+    }
+
+    private void HandleOverlayClick()
+    {
+        // Ferme uniquement si on clique sur l'overlay, pas sur le contenu
+        _ = CloseAsync();
+    }
+
+    private void HandlePanelClick()
+    {
+        // Ne fait rien - empêche la propagation à l'overlay
     }
 
     private async Task CloseAsync()

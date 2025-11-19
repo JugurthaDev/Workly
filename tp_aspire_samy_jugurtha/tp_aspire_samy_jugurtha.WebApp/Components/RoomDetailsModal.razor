@@ -2,8 +2,8 @@
 
 @if (IsVisible)
 {
-    <div class="modal-backdrop" @onclick="Close">
-        <div class="modal-dialog" @onclick:stopPropagation="true">
+    <div class="modal-backdrop" @onclick="HandleBackdropClick">
+        <div class="modal-dialog" @onclick="HandleDialogClick" @onclick:stopPropagation="true">
             <div class="modal-header">
                 <h3 class="modal-title">
                     <svg class="modal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -133,16 +133,27 @@
     [Parameter] public EventCallback OnClose { get; set; }
     [Parameter] public EventCallback<Room> OnBook { get; set; }
 
+    private void HandleBackdropClick()
+    {
+        // Ferme uniquement si on clique sur le backdrop, pas sur le contenu
+        Close();
+    }
+
+    private void HandleDialogClick()
+    {
+        // Ne fait rien - empêche la propagation au backdrop
+    }
+
     private void Close()
     {
         OnClose.InvokeAsync();
     }
 
-    private void OnBookRoom()
+    private async Task OnBookRoom()
     {
         if (Room != null)
         {
-            OnBook.InvokeAsync(Room);
+            await OnBook.InvokeAsync(Room);
         }
         Close();
     }
