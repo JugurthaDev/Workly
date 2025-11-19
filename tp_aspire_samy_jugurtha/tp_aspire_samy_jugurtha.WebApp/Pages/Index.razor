@@ -1,5 +1,8 @@
 @page "/"
 @layout PublicLayout
+@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager Navigation
 
 <PageTitle>Accueil - Workly</PageTitle>
 
@@ -16,7 +19,7 @@
                     dans des bâtiments partenaires, à l'heure ou à la journée.
                 </p>
                 <div class="hero-buttons">
-                    <a href="/register" class="btn btn-hero-primary">
+                    <a href="/authentication/register" class="btn btn-hero-primary">
                         Commencer gratuitement
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -200,8 +203,20 @@
             </p>
             <div class="cta-buttons">
                 <a href="/rooms" class="btn btn-cta-primary">Voir les espaces</a>
-                <a href="/register" class="btn btn-cta-secondary">Créer un compte</a>
+                <a href="/authentication/register" class="btn btn-cta-secondary">Créer un compte</a>
             </div>
         </div>
     </div>
 </section>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        // Redirige automatiquement vers le dashboard si l'utilisateur est déjà connecté
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        if (authState.User.Identity?.IsAuthenticated == true)
+        {
+            Navigation.NavigateTo("/dashboard", replace: true);
+        }
+    }
+}

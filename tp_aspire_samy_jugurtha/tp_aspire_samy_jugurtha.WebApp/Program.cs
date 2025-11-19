@@ -149,10 +149,16 @@ public partial class Program
                             context.ProtocolMessage.Parameters.Remove("request");
                         }
                         
-                        // Si c'est une demande d'inscription, ajoute le paramètre Keycloak
+                        // Si c'est une demande d'inscription, ajoute les paramètres Keycloak
                         if (context.Properties.Items.TryGetValue("kc_action", out var action) && action == "register")
                         {
                             context.ProtocolMessage.SetParameter("kc_action", "register");
+                        }
+                        
+                        // Ajoute le prompt si présent (pour l'inscription)
+                        if (context.Properties.Items.TryGetValue("prompt", out var prompt))
+                        {
+                            context.ProtocolMessage.SetParameter("prompt", prompt);
                         }
                         
                         return Task.CompletedTask;
@@ -217,20 +223,21 @@ public partial class Program
             // Connexion via OIDC (désactivée en E2E)
             app.MapGet("/authentication/login", async ctx =>
             {
-                var returnUrl = ctx.Request.Query["returnUrl"].FirstOrDefault() ?? "/";
+                var returnUrl = ctx.Request.Query["returnUrl"].FirstOrDefault() ?? "/dashboard";
                 await ctx.ChallengeAsync("oidc", new AuthenticationProperties { RedirectUri = returnUrl });
             }).AllowAnonymous();
 
             // Inscription via Keycloak (passe par le middleware OIDC avec paramètre kc_action)
             app.MapGet("/authentication/register", async ctx =>
             {
-                var returnUrl = ctx.Request.Query["returnUrl"].FirstOrDefault() ?? "/";
+                var returnUrl = ctx.Request.Query["returnUrl"].FirstOrDefault() ?? "/dashboard";
                 var properties = new AuthenticationProperties 
                 { 
                     RedirectUri = returnUrl
                 };
                 // Ajoute le paramètre Keycloak pour afficher la page d'inscription
                 properties.Items["kc_action"] = "register";
+                properties.Items["prompt"] = "register";
                 
                 await ctx.ChallengeAsync("oidc", properties);
             }).AllowAnonymous();
