@@ -157,7 +157,12 @@ public class Program
 
             if (overlap)
             {
-                return Results.Conflict("Créneau déjà pris.");
+                return Results.Conflict(new
+                {
+                    Message = "Ce créneau est déjà réservé.",
+                    ExistingStartUtc = booking.StartUtc,
+                    ExistingEndUtc = booking.EndUtc
+                });
             }
 
             var resolvedUser = await ResolveAppUserAsync(principal, db);
@@ -166,9 +171,11 @@ public class Program
                 return Results.BadRequest(new { Message = "Impossible de déterminer l'utilisateur courant." });
             }
 
+            await db.SaveChangesAsync();
+
             booking.Id = 0;
             booking.AppUserId = resolvedUser.Id;
-            booking.AppUser = resolvedUser;
+            booking.AppUser = null; // éviter les cycles de sérialisation
             if (booking.Status == default)
             {
                 booking.Status = BookingStatus.Confirmed;
@@ -176,7 +183,19 @@ public class Program
 
             db.Bookings.Add(booking);
             await db.SaveChangesAsync();
-            return Results.Created($"/api/bookings/{booking.Id}", booking);
+
+            var dto = new
+            {
+                booking.Id,
+                booking.AppUserId,
+                booking.ResourceType,
+                booking.ResourceId,
+                booking.StartUtc,
+                booking.EndUtc,
+                booking.Status
+            };
+
+            return Results.Created($"/api/bookings/{booking.Id}", dto);
         });
 
         app.MapDelete("/api/bookings/{id}", [Authorize(Roles = "admin")] async (WorklyDbContext db, int id) =>
@@ -212,13 +231,13 @@ public class Program
     {
         if (!await db.AppUsers.AnyAsync())
         {
-            db.AppUsers.Add(new AppUser { Id = 1, DisplayName = "demo", Email = "demo@workly.test" });
+            db.AppUsers.Add(new AppUser { DisplayName = "demo", Email = "demo@workly.test" });
             await db.SaveChangesAsync();
         }
 
         if (!await db.Workspaces.AnyAsync())
         {
-            db.Workspaces.Add(new Workspace { Id = 1, Name = "HQ Paris" });
+            db.Workspaces.Add(new Workspace { Name = "HQ Paris" });
             await db.SaveChangesAsync();
         }
 
