@@ -1,4 +1,5 @@
 ![CI](https://github.com/JugurthaDev/Workly/actions/workflows/ci.yml/badge.svg)
+[![Tests](https://github.com/JugurthaDev/Workly/actions/workflows/tests.yml/badge.svg)](https://github.com/JugurthaDev/Workly/actions/workflows/tests.yml)
 
 # Workly
 
@@ -13,6 +14,7 @@
 - [API](#api)
 - [Mise en place locale](#mise-en-place-locale)
 - [Variables d'environnement](#variables-denvironnement)
+- [Tests](#tests)
 - [Licence](#licence)
 
 ## Architecture
@@ -21,8 +23,8 @@
 │                      Traefik (Edge)                      │
 │          reverse proxy + ACME DNS challenge             │
 └──────────────┬───────────────────────┬──────────────────┘
-                │                       │
-            (HTTPS)                       (HTTPS)
+               │                       │
+            (HTTPS)                   (HTTPS)
                 │                       │
             WebApp (Blazor Server)   Keycloak (OIDC Provider)
                 │                       │
@@ -148,6 +150,48 @@ Les migrations EF sont appliquées automatiquement au démarrage (ligne `db.Data
 ```bash
 dotnet ef migrations add NomMigration --project tp_aspire_samy_jugurtha/tp_aspire_samy_jugurtha.ApiService --startup-project tp_aspire_samy_jugurtha/tp_aspire_samy_jugurtha.ApiService
 ```
+
+## Tests
+
+Les tests utilisent xUnit et couvrent trois niveaux: unitaires API, intégration API, et E2E (UI) pour la WebApp avec Playwright.
+
+Projets:
+- Unitaires API: `tp_aspire_samy_jugurtha.ApiService.UnitTests`
+- Intégration API: `tp_aspire_samy_jugurtha.ApiService.IntegrationTests`
+- E2E WebApp (Playwright): `tp_aspire_samy_jugurtha.WebApp.E2E`
+
+Exécuter toute la suite:
+
+```bash
+dotnet test
+```
+
+Notes et détails:
+- Intégration API:
+    - Hébergement via `WebApplicationFactory<Program>`.
+    - Auth JWT remplacée par un schéma de test (headers `X-User`, `X-Roles`).
+    - EF Core basculé sur `InMemory`; migrations/seed désactivés (`RunMigrations=false`).
+    - Scénarios: `GET /api/rooms`, `POST /api/bookings` (201), conflit (409), `GET /api/bookings/all` (admin), `DELETE /api/bookings/{id}` (admin).
+- E2E WebApp:
+    - Playwright lance Chromium en mode headless et navigue sur la WebApp hébergée en Kestrel (port éphémère) directement dans le process de test.
+    - L’auth OIDC est remplacée par une auth de test (utilisateur simulé) et `IWorklyClient` est remplacé par un client en mémoire pour des scénarios isolés de l’API.
+    - Scénarios: affichage d’une salle de démonstration sur la page « Salles », création d’une réservation via le formulaire sur « Réservations » puis vérification de l’apparition dans la liste.
+    - Premier run: Playwright télécharge automatiquement les navigateurs (Chromium/Firefox/WebKit). Cela peut prendre quelques minutes la première fois; les runs suivants sont rapides.
+
+Exemples utiles:
+
+```bash
+# Lancer uniquement les tests E2E
+dotnet test --filter FullyQualifiedName~tp_aspire_samy_jugurtha.WebApp.E2E
+
+# Lancer uniquement les tests d’intégration API
+dotnet test --filter FullyQualifiedName~tp_aspire_samy_jugurtha.ApiService.IntegrationTests
+```
+
+Bascules de test (automatiques en E2E):
+- `E2E_TEST_AUTH=true` active l’authentification de test côté WebApp au lieu d’OIDC.
+- `E2E_FAKE_CLIENT=true` remplace `IWorklyClient` par un client in-memory pour éviter des appels réels à l’API.
+Ces variables sont positionnées par la fixture E2E; vous n’avez généralement rien à configurer manuellement.
 
 ## Variables d'environnement
 

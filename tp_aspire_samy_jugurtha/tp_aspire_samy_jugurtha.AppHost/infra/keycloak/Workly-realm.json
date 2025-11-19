@@ -459,6 +459,7 @@
     "totpAppMicrosoftAuthenticatorName"
   ],
   "localizationTexts": {},
+  "loginTheme": "workly",
   "webAuthnPolicyRpEntityName": "keycloak",
   "webAuthnPolicySignatureAlgorithms": [
     "ES256",
@@ -1930,8 +1931,9 @@
       }
     ]
   },
-  "internationalizationEnabled": false,
-  "supportedLocales": [],
+  "internationalizationEnabled": true,
+  "supportedLocales": ["fr"],
+  "defaultLocale": "fr",
   "authenticationFlows": [
     {
       "id": "14818e81-5974-4fa0-8167-cd017a7367db",
