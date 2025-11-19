@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Net.Http.Headers;
 using System.Security.Claims;
 using tp_aspire_samy_jugurtha.WebApp.Clients;
+using tp_aspire_samy_jugurtha.WebApp.Models;
 using tp_aspire_samy_jugurtha.WebApp.Testing;
 
 var app = Program.CreateApp(args);
@@ -48,8 +49,8 @@ public partial class Program
                 .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>("Test", _ => { });
             builder.Services.AddAuthorization(options =>
             {
-                options.AddPolicy("AdminOnly", policy => policy.RequireRole("admin"));
-                options.AddPolicy("UserOrAdmin", policy => policy.RequireRole("user", "admin"));
+                options.AddPolicy("AdminOnly", policy => policy.RequireRole(Roles.Admin));
+                options.AddPolicy("UserOrAdmin", policy => policy.RequireRole(Roles.User, Roles.Admin));
             });
         }
         else
@@ -169,8 +170,8 @@ public partial class Program
 
             builder.Services.AddAuthorization(options =>
             {
-                options.AddPolicy("AdminOnly", policy => policy.RequireRole("admin"));
-                options.AddPolicy("UserOrAdmin", policy => policy.RequireRole("user", "admin"));
+                options.AddPolicy("AdminOnly", policy => policy.RequireRole(Roles.Admin));
+                options.AddPolicy("UserOrAdmin", policy => policy.RequireRole(Roles.User, Roles.Admin));
             });
         }
 

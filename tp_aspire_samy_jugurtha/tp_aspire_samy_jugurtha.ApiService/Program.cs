@@ -120,7 +120,7 @@ public class Program
         app.MapGet("/api/workspaces", [Authorize] async (WorklyDbContext db) =>
             await db.Workspaces.AsNoTracking().ToListAsync());
 
-        app.MapPost("/api/workspaces", [Authorize(Roles = "admin")] async (WorklyDbContext db, Workspace ws) =>
+        app.MapPost("/api/workspaces", [Authorize(Roles = Roles.Admin)] async (WorklyDbContext db, Workspace ws) =>
         {
             db.Workspaces.Add(ws);
             await db.SaveChangesAsync();
@@ -171,7 +171,7 @@ public class Program
             return Results.Ok(userBookings);
         });
 
-        app.MapGet("/api/bookings/all", [Authorize(Roles = "admin")] async (WorklyDbContext db) =>
+        app.MapGet("/api/bookings/all", [Authorize(Roles = Roles.Admin)] async (WorklyDbContext db) =>
             await db.Bookings.AsNoTracking().Select(b => new Booking
             {
                 Id = b.Id,

@@ -2,7 +2,7 @@
 @using Microsoft.AspNetCore.Authorization
 @using tp_aspire_samy_jugurtha.WebApp.Clients
 @using tp_aspire_samy_jugurtha.WebApp.Models
-@attribute [Authorize(Roles = "admin")]
+@attribute [Authorize(Roles = Roles.Admin)]
 @inject IWorklyClient Api
 
 <PageTitle>Administration - Workly</PageTitle>
