@@ -9,11 +9,10 @@
 
     <h4>Create a Booking</h4>
 
-    <div class="mb-2">
-        <label class="form-label">User ID</label>
-        <InputNumber @bind-Value="Model.AppUserId" class="form-control" />
-        <ValidationMessage For="() => Model.AppUserId" />
-    </div>
+    @if (!string.IsNullOrEmpty(_errorMessage))
+    {
+        <div class="alert alert-danger">@_errorMessage</div>
+    }
 
     <div class="mb-2">
         <label class="form-label">Resource Type</label>
@@ -49,9 +48,6 @@
     public class BookingInput
     {
         [Required]
-        public int AppUserId { get; set; }
-
-        [Required]
         public ResourceType ResourceType { get; set; } = ResourceType.Room;
 
         [Required]
@@ -64,6 +60,8 @@
         [DateGreaterThan(nameof(StartUtc), ErrorMessage = "End time must be after start time.")]
         public DateTime EndUtc { get; set; } = DateTime.UtcNow.AddHours(2);
     }
+
+    private string? _errorMessage;
 
     // Petite validation custom : EndUtc > StartUtc
     public class DateGreaterThanAttribute : ValidationAttribute
@@ -101,22 +99,38 @@
 
     private async Task Submit()
     {
-        var newBooking = new Booking
+        _errorMessage = null;
+        
+        try
         {
-            AppUserId = Model.AppUserId,
-            ResourceType = Model.ResourceType,
-            ResourceId = Model.ResourceId,
-            StartUtc = Model.StartUtc,
-            EndUtc = Model.EndUtc,
-            Status = BookingStatus.Confirmed
-        };
+            var newBooking = new Booking
+            {
+                AppUserId = 0, // sera défini côté API à partir du token
+                ResourceType = Model.ResourceType,
+                ResourceId = Model.ResourceId,
+                StartUtc = Model.StartUtc,
+                EndUtc = Model.EndUtc,
+                Status = BookingStatus.Confirmed
+            };
 
-        var created = await Api.CreateBookingAsync(newBooking);
-        if (created is not null)
+            var created = await Api.CreateBookingAsync(newBooking);
+            if (created is not null)
+            {
+                await OnBookingAdded.InvokeAsync();
+                Model = new BookingInput(); // reset
+                editContext = new EditContext(Model);
+                _errorMessage = null;
+                StateHasChanged();
+            }
+        }
+        catch (BookingConflictException ex)
         {
-            await OnBookingAdded.InvokeAsync();
-            Model = new BookingInput(); // reset
-            editContext = new EditContext(Model);
+            _errorMessage = ex.Message;
+            StateHasChanged();
+        }
+        catch (Exception)
+        {
+            _errorMessage = "Une erreur est survenue lors de la création de la réservation.";
             StateHasChanged();
         }
     }

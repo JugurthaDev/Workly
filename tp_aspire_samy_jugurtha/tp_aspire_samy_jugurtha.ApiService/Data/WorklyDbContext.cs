@@ -2,7 +2,6 @@ using Microsoft.EntityFrameworkCore;
 using tp_aspire_samy_jugurtha.ApiService.Data.Entities;
 
 namespace tp_aspire_samy_jugurtha.ApiService.Data;
-using Microsoft.EntityFrameworkCore;
 
 public class WorklyDbContext : DbContext
 {
@@ -80,7 +79,8 @@ public class WorklyDbContext : DbContext
              .HasForeignKey(x => x.AppUserId)
              .OnDelete(DeleteBehavior.Restrict);
 
-            e.HasIndex(x => new { x.ResourceType, x.ResourceId, x.StartUtc, x.EndUtc }).IsUnique();
+            // Index unique pour éviter les doublons, mais uniquement pour les réservations non annulées
+            e.HasIndex(x => new { x.ResourceType, x.ResourceId, x.StartUtc, x.EndUtc, x.Status });
         });
 
         base.OnModelCreating(b);
