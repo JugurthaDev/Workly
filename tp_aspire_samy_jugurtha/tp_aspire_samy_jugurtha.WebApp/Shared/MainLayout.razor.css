@@ -1,15 +1,15 @@
-/* Layout moderne */
+/* Layout moderne - v2.0 */
 .app-container {
     display: flex;
     min-height: 100vh;
     background: #f8f9fc;
 }
 
-/* Sidebar moderne - Thème page d'accueil */
+/* Sidebar moderne - Thème page d'accueil blanc */
 .modern-sidebar {
     width: 280px;
-    background: linear-gradient(180deg, #ffffff 0%, #f8f9fc 100%);
-    color: var(--text-primary);
+    background: linear-gradient(180deg, #ffffff 0%, #f8f9fc 100%) !important;
+    color: var(--text-primary) !important;
     display: flex;
     flex-direction: column;
     box-shadow: 4px 0 20px rgba(0, 0, 0, 0.08);

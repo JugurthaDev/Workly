@@ -17,19 +17,6 @@
         </div>
     </div>
 
-<div class="card mb-4">
-    <div class="card-header">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="12" y1="5" x2="12" y2="19"></line>
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-        </svg>
-        Créer une nouvelle réservation
-    </div>
-    <div class="card-body">
-        <AddBookingForm OnBookingAdded="HandleBookingAdded" />
-    </div>
-</div>
-
 @if (bookings is null)
 {
     <div class="loading">
@@ -48,7 +35,7 @@ else if (!bookings.Any())
                 <line x1="3" y1="10" x2="21" y2="10"></line>
             </svg>
             <div class="empty-state-title">Aucune réservation</div>
-            <p class="empty-state-description">Créez votre première réservation en utilisant le formulaire ci-dessus.</p>
+            <p class="empty-state-description">Vous n'avez aucune réservation pour le moment.</p>
         </div>
     </div>
 }
@@ -276,32 +263,36 @@ else
 
     private void HandleEditBooking(Booking booking)
     {
+        // Rediriger vers la page de la salle pour créer une nouvelle réservation
+        // Car la modification d'une réservation existante nécessite un formulaire complexe
+        Navigation.NavigateTo("/rooms");
         Layout?.ShowInfoNotification(
-            "Modification",
-            $"Modification de la réservation {GetResourceName(booking)}"
+            "Information",
+            "Pour modifier une réservation, veuillez en créer une nouvelle et annuler l'ancienne."
         );
-        // Logique de modification à implémenter
     }
 
-    private void HandleCancelBooking(Booking booking)
+    private async Task HandleCancelBooking(Booking booking)
     {
-        Layout?.ShowWarningNotification(
-            "Annulation",
-            $"Êtes-vous sûr de vouloir annuler la réservation {GetResourceName(booking)} ?"
-        );
-        
-        // Simulation d'annulation
-        Task.Delay(2000).ContinueWith(async _ =>
+        try
         {
-            await InvokeAsync(async () =>
-            {
-                Layout?.ShowSuccessNotification(
-                    "Réservation annulée",
-                    "La réservation a été annulée avec succès."
-                );
-                await LoadBookings();
-            });
-        });
+            // Appel à l'API pour supprimer la réservation
+            await Api.DeleteBookingAsync(booking.Id);
+            
+            Layout?.ShowSuccessNotification(
+                "Réservation annulée",
+                $"La réservation {GetResourceName(booking)} a été annulée avec succès."
+            );
+            
+            await LoadBookings();
+        }
+        catch (Exception ex)
+        {
+            Layout?.ShowErrorNotification(
+                "Erreur",
+                $"Impossible d'annuler la réservation : {ex.Message}"
+            );
+        }
     }
 
     private string GetStatusClass(BookingStatus status)
