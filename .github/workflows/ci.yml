@@ -50,6 +50,43 @@ jobs:
       - name: Build
         run: dotnet build "$SOLUTION_PATH" -c Release --no-restore
 
+  test:
+    name: Test suite
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+
+      - name: Remove missing E2E project from solution (if absent)
+        run: |
+          set -e
+          E2E="tp_aspire_samy_jugurtha/tp_aspire_samy_jugurtha.WebApp.E2E/tp_aspire_samy_jugurtha.WebApp.E2E.csproj"
+          if [ ! -f "$E2E" ]; then
+            echo "E2E project not found, removing from solution to unblock CI"
+            dotnet sln "$SOLUTION_PATH" remove "$E2E" || true
+          fi
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-
+
+      - name: Restore
+        run: dotnet restore "$SOLUTION_PATH"
+
+      - name: Build
+        run: dotnet build "$SOLUTION_PATH" -c Release --no-restore
+
       - name: Cache Playwright browsers
         uses: actions/cache@v4
         with:
