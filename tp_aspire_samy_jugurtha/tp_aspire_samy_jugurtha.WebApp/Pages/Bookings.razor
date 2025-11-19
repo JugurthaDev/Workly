@@ -169,6 +169,12 @@ else
             var ret = Uri.EscapeDataString(Navigation.Uri);
             Navigation.NavigateTo($"/authentication/login?returnUrl={ret}", forceLoad: true);
         }
+        catch (Exception)
+        {
+            // Autres erreurs backend/connectivité: éviter de casser la page et informer l'utilisateur
+            Layout?.ShowErrorNotification("Erreur", "Impossible de charger les réservations pour le moment.");
+            bookings = new();
+        }
     }
 
     private async Task HandleBookingAdded()

@@ -141,7 +141,9 @@ public partial class Program
         builder.Services.AddHttpContextAccessor();
         builder.Services.AddTransient<TokenHandler>();
 
-        var useFakeClient = IsTruthy(Environment.GetEnvironmentVariable("E2E_FAKE_CLIENT"));
+    var useFakeClient = IsTruthy(Environment.GetEnvironmentVariable("E2E_FAKE_CLIENT"));
+    var runningInAspire = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("ASPIRE_RESOURCE_SERVICE_ENDPOINT_URL"))
+                  || !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("ASPIRE_DASHBOARD_OTLP_ENDPOINT_URL"));
         if (useFakeClient)
         {
             builder.Services.AddSingleton<IWorklyClient, FakeWorklyClient>();
@@ -150,7 +152,11 @@ public partial class Program
         {
             builder.Services.AddHttpClient<IWorklyClient, WorklyClient>(client =>
             {
-                var apiBaseUrl = builder.Configuration["Services:ApiBaseUrl"] ?? "https+http://apiservice";
+                // Lorsque l'app tourne sous AppHost (Aspire), on utilise la découverte de services (https+http)
+                // Sinon on lit depuis la configuration (fallback localhost en dev pur)
+                var apiBaseUrl = runningInAspire
+                    ? "https+http://apiservice"
+                    : (builder.Configuration["Services:ApiBaseUrl"] ?? "http://localhost:5018");
                 client.BaseAddress = new Uri(apiBaseUrl);
                 client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
             }).AddHttpMessageHandler<TokenHandler>();
