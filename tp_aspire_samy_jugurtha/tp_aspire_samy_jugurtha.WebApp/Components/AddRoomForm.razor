@@ -10,6 +10,22 @@
     <h4>Add a new room</h4>
 
     <div class="mb-2">
+        <label class="form-label">Workspace</label>
+        <InputSelect @bind-Value="Model.WorkspaceId" class="form-select">
+            <option value="">-- select --</option>
+            @foreach (var w in Workspaces)
+            {
+                <option value="@w.Id">@w.Name (@w.City)</option>
+            }
+        </InputSelect>
+        <ValidationMessage For="() => Model.WorkspaceId" />
+        @if (!string.IsNullOrEmpty(validationMessage))
+        {
+            <div class="text-danger">@validationMessage</div>
+        }
+    </div>
+
+    <div class="mb-2">
         <label class="form-label">Name</label>
         <InputText @bind-Value="Model.Name" class="form-control" placeholder="Ex: Salle Innovation" />
         <ValidationMessage For="() => Model.Name" />
@@ -33,6 +49,9 @@
 @code {
     public class RoomInput
     {
+        [Required]
+        [Range(1, int.MaxValue)]
+        public int WorkspaceId { get; set; }
         [Required, MaxLength(150)]
         public string Name { get; set; } = string.Empty;
 
@@ -45,6 +64,7 @@
 
     private RoomInput Model = new();
     private EditContext? editContext;
+    private List<Workspace> Workspaces = new();
 
     [Parameter] public EventCallback OnRoomAdded { get; set; } // notifie la page parente
 
@@ -53,22 +73,53 @@
         editContext = new EditContext(Model);
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            Workspaces = await Api.GetWorkspacesAsync();
+            if (Workspaces.Count == 1)
+            {
+                Model.WorkspaceId = Workspaces[0].Id;
+            }
+            StateHasChanged();
+        }
+    }
+
     private async Task Submit()
     {
-        var created = await Api.CreateRoomAsync(new Room
+        if (Model.WorkspaceId <= 0)
         {
-            WorkspaceId = 0, // Sera auto-assigné par le backend
-            Name = Model.Name,
-            Location = Model.Location,
-            Capacity = Model.Capacity
-        });
+            return; // validation côté UI déjà affichée
+        }
+
+        Room? created = null;
+        try
+        {
+            created = await Api.CreateRoomAsync(new Room
+            {
+                WorkspaceId = Model.WorkspaceId,
+                Name = Model.Name,
+                Location = Model.Location,
+                Capacity = Model.Capacity
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            validationMessage = ex.Message;
+            StateHasChanged();
+            return;
+        }
 
         if (created is not null)
         {
             await OnRoomAdded.InvokeAsync(); // demande à la page de recharger sa liste
             Model = new RoomInput();         // reset du formulaire
             editContext = new EditContext(Model);
+            validationMessage = null;
             StateHasChanged();
         }
     }
+
+    private string? validationMessage;
 }

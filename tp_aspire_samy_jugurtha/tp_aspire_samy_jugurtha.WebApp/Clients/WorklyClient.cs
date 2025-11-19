@@ -3,7 +3,7 @@ namespace tp_aspire_samy_jugurtha.WebApp.Clients;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using Models;
+using tp_aspire_samy_jugurtha.WebApp.Models;
 
 public class WorklyClient(HttpClient http) : IWorklyClient
 {
@@ -11,6 +11,27 @@ public class WorklyClient(HttpClient http) : IWorklyClient
     {
         PropertyNameCaseInsensitive = true
     };
+
+    // ----- Workspaces -----
+    public async Task<List<Workspace>> GetWorkspacesAsync(CancellationToken ct = default)
+    {
+        var resp = await http.GetAsync("/api/workspaces", ct);
+        if (!resp.IsSuccessStatusCode)
+        {
+            resp.EnsureSuccessStatusCode();
+        }
+        return await resp.Content.ReadFromJsonAsync<List<Workspace>>(JsonOpts, ct) ?? new List<Workspace>();
+    }
+
+    public async Task<Workspace?> CreateWorkspaceAsync(Workspace ws, CancellationToken ct = default)
+    {
+        var resp = await http.PostAsJsonAsync("/api/workspaces", ws, JsonOpts, ct);
+        if (!resp.IsSuccessStatusCode)
+        {
+            resp.EnsureSuccessStatusCode();
+        }
+        return await resp.Content.ReadFromJsonAsync<Workspace>(JsonOpts, ct);
+    }
 
     // ----- Rooms -----
     public async Task<List<Room>> GetRoomsAsync(CancellationToken ct = default)
@@ -26,8 +47,23 @@ public class WorklyClient(HttpClient http) : IWorklyClient
     public async Task<Room?> CreateRoomAsync(Room room, CancellationToken ct = default)
     {
         var resp = await http.PostAsJsonAsync("/api/rooms", room, JsonOpts, ct);
+        if (resp.IsSuccessStatusCode)
+        {
+            return await resp.Content.ReadFromJsonAsync<Room>(JsonOpts, ct);
+        }
+
+        if (resp.StatusCode == HttpStatusCode.NotFound)
+        {
+            // Workspace inexistant
+            var error = await resp.Content.ReadFromJsonAsync<ErrorResponse>(JsonOpts, ct);
+            throw new InvalidOperationException(error?.Message ?? "Workspace introuvable.");
+        }
+
+        if (resp.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+            throw new UnauthorizedAccessException();
+
         resp.EnsureSuccessStatusCode();
-        return await resp.Content.ReadFromJsonAsync<Room>(JsonOpts, ct);
+        return null;
     }
 
     // ----- Bookings -----
@@ -79,4 +115,5 @@ public class WorklyClient(HttpClient http) : IWorklyClient
     }
 
     private sealed record BookingConflictResponse(string? Message, DateTime? ExistingStartUtc, DateTime? ExistingEndUtc);
+    private sealed record ErrorResponse(string? Message);
 }

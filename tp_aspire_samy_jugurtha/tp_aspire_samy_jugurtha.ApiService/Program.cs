@@ -116,10 +116,27 @@ public class Program
 
     private static void MapEndpoints(WebApplication app)
     {
+        // ---- Workspaces ----
+        app.MapGet("/api/workspaces", [Authorize] async (WorklyDbContext db) =>
+            await db.Workspaces.AsNoTracking().ToListAsync());
+
+        app.MapPost("/api/workspaces", [Authorize(Roles = "admin")] async (WorklyDbContext db, Workspace ws) =>
+        {
+            db.Workspaces.Add(ws);
+            await db.SaveChangesAsync();
+            return Results.Created($"/api/workspaces/{ws.Id}", ws);
+        });
+
         app.MapGet("/api/rooms", [Authorize] async (WorklyDbContext db) => await db.Rooms.AsNoTracking().ToListAsync());
 
         app.MapPost("/api/rooms", [Authorize] async (WorklyDbContext db, Room room) =>
         {
+            // Vérifie que le workspace cible existe avant l'insertion pour éviter l'erreur FK
+            var workspaceExists = await db.Workspaces.AnyAsync(w => w.Id == room.WorkspaceId);
+            if (!workspaceExists)
+            {
+                return Results.NotFound(new { Message = $"Workspace inexistant: {room.WorkspaceId}" });
+            }
             db.Rooms.Add(room);
             await db.SaveChangesAsync();
             return Results.Created($"/api/rooms/{room.Id}", room);
