@@ -244,29 +244,9 @@ public class Program
                 return Results.NotFound();
             }
 
-            // Admin: peut tout supprimer
             if (!ctx.User.Identity?.IsAuthenticated ?? true)
             {
                 return Results.Unauthorized();
-            }
-
-            var isAdmin = ctx.User.IsInRole("admin");
-
-            // Utilisateur: ne peut supprimer que ses propres réservations
-            if (!isAdmin)
-            {
-                // On identifie l'utilisateur par son email (claim "email")
-                var email = ctx.User.FindFirst("email")?.Value;
-                if (string.IsNullOrEmpty(email))
-                {
-                    return Results.Forbid();
-                }
-
-                var appUser = await db.AppUsers.FirstOrDefaultAsync(u => u.Email == email);
-                if (appUser is null || appUser.Id != booking.AppUserId)
-                {
-                    return Results.Forbid();
-                }
             }
 
             db.Bookings.Remove(booking);
