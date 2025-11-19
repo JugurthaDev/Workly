@@ -149,16 +149,18 @@ public partial class Program
                             context.ProtocolMessage.Parameters.Remove("request");
                         }
                         
-                        // Si c'est une demande d'inscription, ajoute les paramètres Keycloak
+                        // Si c'est une demande d'inscription, modifie l'URL pour pointer vers l'endpoint de registration Keycloak
                         if (context.Properties.Items.TryGetValue("kc_action", out var action) && action == "register")
                         {
-                            context.ProtocolMessage.SetParameter("kc_action", "register");
-                        }
-                        
-                        // Ajoute le prompt si présent (pour l'inscription)
-                        if (context.Properties.Items.TryGetValue("prompt", out var prompt))
-                        {
-                            context.ProtocolMessage.SetParameter("prompt", prompt);
+                            // Remplace /auth par /registrations dans l'URL d'autorisation
+                            var issuer = context.ProtocolMessage.IssuerAddress;
+                            if (!string.IsNullOrEmpty(issuer) && issuer.Contains("/protocol/openid-connect/auth"))
+                            {
+                                context.ProtocolMessage.IssuerAddress = issuer.Replace(
+                                    "/protocol/openid-connect/auth",
+                                    "/protocol/openid-connect/registrations"
+                                );
+                            }
                         }
                         
                         return Task.CompletedTask;
@@ -227,7 +229,7 @@ public partial class Program
                 await ctx.ChallengeAsync("oidc", new AuthenticationProperties { RedirectUri = returnUrl });
             }).AllowAnonymous();
 
-            // Inscription via Keycloak (passe par le middleware OIDC avec paramètre kc_action)
+            // Inscription via Keycloak (passe par le middleware OIDC vers l'endpoint de registration)
             app.MapGet("/authentication/register", async ctx =>
             {
                 var returnUrl = ctx.Request.Query["returnUrl"].FirstOrDefault() ?? "/dashboard";
@@ -235,9 +237,8 @@ public partial class Program
                 { 
                     RedirectUri = returnUrl
                 };
-                // Ajoute le paramètre Keycloak pour afficher la page d'inscription
+                // Marque cette demande comme une inscription pour modifier l'URL Keycloak
                 properties.Items["kc_action"] = "register";
-                properties.Items["prompt"] = "register";
                 
                 await ctx.ChallengeAsync("oidc", properties);
             }).AllowAnonymous();
