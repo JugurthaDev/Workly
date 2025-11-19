@@ -20,16 +20,16 @@
 │                      Traefik (Edge)                      │
 │          reverse proxy + ACME DNS challenge             │
 └──────────────┬───────────────────────┬──────────────────┘
-		 │                       │
-	 (HTTPS)                       (HTTPS)
-		 │                       │
-	 WebApp (Blazor Server)   Keycloak (OIDC Provider)
-		 │                       │
-		 └─────────┬─────────────┘
-			    │
-		      ApiService (Minimal API)
-			    │
-			PostgreSQL (Npgsql)
+                │                       │
+            (HTTPS)                       (HTTPS)
+                │                       │
+            WebApp (Blazor Server)   Keycloak (OIDC Provider)
+                │                       │
+                └─────────┬─────────────┘
+                        │
+                    ApiService (Minimal API)
+                        │
+                    PostgreSQL (Npgsql)
 ```
 Composants :
 - `tp_aspire_samy_jugurtha.WebApp` : Interface utilisateur Blazor Server, authentification OIDC, persistance des clés de DataProtection.
@@ -63,7 +63,7 @@ Composants :
 ## Déploiement
 En production, l'application est hébergée sur un Droplet **DigitalOcean** accessible via **https://worklyapp.fr**. Le fournisseur d'identité **Keycloak** est exposé séparément sur **https://auth.worklyapp.fr** (realm `Workly`).
 
-Le domaine public principal est injecté via la variable `PUBLIC_HOST` (ex: `worklyapp.fr`). Assurez-vous qu'il corresponds au FQDN pointant sur votre serveur et que les entrées DNS (A/AAAA) sont propagées avant le premier démarrage pour que Traefik puisse obtenir les certificats.
+Le domaine public principal est injecté via la variable `PUBLIC_HOST` (ex: `worklyapp.fr`).
 
 Le workflow **CI GitHub** (badge en haut du fichier) construit et pousse automatiquement les images container à chaque intégration sur `main` (ou création de tag/version), puis la machine de production effectue un pull et un redeploy (mise à jour du `TAG`) assurant un déploiement continu sans intervention manuelle.
 
