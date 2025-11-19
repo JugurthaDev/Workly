@@ -11,7 +11,16 @@ public class FakeWorklyClient : IWorklyClient
 
     private readonly List<Room> _rooms = new()
     {
-        new Room { Id = 1, WorkspaceId = 1, Name = "Salle Volt", Capacity = 6 }
+        new Room { Id = 1, WorkspaceId = 1, Name = "Paris", Location = "Étage 2, Aile Est", Capacity = 8 },
+        new Room { Id = 2, WorkspaceId = 1, Name = "New York", Location = "Étage 2, Aile Ouest", Capacity = 10 },
+        new Room { Id = 3, WorkspaceId = 1, Name = "Tokyo", Location = "Étage 3, Centre", Capacity = 12 },
+        new Room { Id = 4, WorkspaceId = 1, Name = "Londres", Location = "Étage 3, Aile Est", Capacity = 6 },
+        new Room { Id = 5, WorkspaceId = 1, Name = "Berlin", Location = "Étage 3, Aile Ouest", Capacity = 8 },
+        new Room { Id = 6, WorkspaceId = 1, Name = "Sydney", Location = "Étage 4, Centre", Capacity = 10 },
+        new Room { Id = 7, WorkspaceId = 1, Name = "Dubai", Location = "Étage 4, Aile Est", Capacity = 6 },
+        new Room { Id = 8, WorkspaceId = 1, Name = "Singapour", Location = "Étage 4, Aile Ouest", Capacity = 8 },
+        new Room { Id = 9, WorkspaceId = 1, Name = "Shanghai", Location = "Étage 5, Centre", Capacity = 12 },
+        new Room { Id = 10, WorkspaceId = 1, Name = "Los Angeles", Location = "Étage 5, Aile Est", Capacity = 10 }
     };
 
     private readonly List<Booking> _bookings = new();

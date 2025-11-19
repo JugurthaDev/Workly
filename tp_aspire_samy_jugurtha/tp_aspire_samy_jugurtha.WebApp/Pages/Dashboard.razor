@@ -175,7 +175,7 @@
                                         </svg>
                                     </div>
                                     <div class="booking-modern-details">
-                                        <div class="booking-modern-title">@booking.ResourceType #@booking.ResourceId</div>
+                                        <div class="booking-modern-title">@GetResourceName(booking)</div>
                                         <div class="booking-modern-time">
                                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                 <circle cx="12" cy="12" r="10"></circle>
@@ -812,6 +812,7 @@
 @code {
     private List<Room>? rooms;
     private List<Booking>? recentBookings;
+    private Dictionary<int, string> roomNames = new();
     private bool isLoading = true;
     private int totalRooms = 0;
     private int totalBookings = 0;
@@ -826,6 +827,7 @@
         try
         {
             rooms = await Api.GetRoomsAsync();
+            roomNames = rooms?.ToDictionary(r => r.Id, r => r.Name) ?? new();
             recentBookings = await Api.GetBookingsAsync();
             
             totalRooms = rooms?.Count ?? 0;
@@ -840,6 +842,18 @@
         {
             isLoading = false;
         }
+    }
+    
+    /// <summary>
+    /// Retourne le nom formaté de la ressource (salle ou bureau)
+    /// </summary>
+    private string GetResourceName(Booking booking)
+    {
+        if (booking.ResourceType == ResourceType.Room && roomNames.TryGetValue(booking.ResourceId, out var name))
+        {
+            return $"Salle {name}";
+        }
+        return $"{booking.ResourceType} #{booking.ResourceId}";
     }
 
     /// <summary>
