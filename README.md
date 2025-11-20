@@ -5,6 +5,7 @@
 > Plateforme de réservation d'espaces de travail (salles, bureaux, postes) construite avec .NET 9, Blazor Server, Minimal APIs, Keycloak, PostgreSQL & Traefik.
 
 ## Sommaire
+- [Aperçu](#aperçu)
 - [Architecture](#architecture)
 - [Technologies](#technologies)
 - [Schéma de la base de données](#schéma-de-la-base-de-données)
@@ -15,6 +16,16 @@
 - [Variables d'environnement](#variables-denvironnement)
 - [Tests](#tests)
 - [Licence](#licence)
+
+## Aperçu
+
+![1](.github/images/1.png)
+
+![2](.github/images/2.png)
+
+![3](.github/images/3.png)
+
+![4](.github/images/4.png)
 
 ## Architecture
 ```
